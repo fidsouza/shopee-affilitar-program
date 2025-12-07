@@ -12,3 +12,5 @@ coverage/
 .vscode/
 frontend/.env.local
 frontend/.turbo/
+.vercel
+.env*.local

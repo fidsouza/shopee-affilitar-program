@@ -1,9 +1,14 @@
 'use server';
 
-import { META_STANDARD_EVENTS, type MetaEvent } from '@/lib/meta-events';
-import { readValue, upsertItems } from '@/lib/edge-config';
-import { pixelConfigSchema, type PixelConfigInput } from '@/lib/validation';
-import { uuidv4 } from '@/lib/uuid';
+import { META_STANDARD_EVENTS, type MetaEvent } from "@/lib/meta-events";
+import { readValue, upsertItems } from "@/lib/edge-config";
+import {
+  deletePixelSchema,
+  pixelConfigSchema,
+  type DeletePixelInput,
+  type PixelConfigInput,
+} from "@/lib/validation";
+import { uuidv4 } from "@/lib/uuid";
 
 export type PixelRecord = PixelConfigInput & {
   id: string;
@@ -19,7 +24,7 @@ type PixelIndexEntry = {
   isDefault?: boolean;
 };
 
-const PIXEL_INDEX_KEY = 'pixels_index';
+const PIXEL_INDEX_KEY = "pixels_index";
 const pixelKey = (id: string) => `pixels_${id}`;
 
 async function getIndex(): Promise<PixelIndexEntry[]> {
@@ -100,4 +105,19 @@ export async function getDefaultPixel(): Promise<PixelRecord | null> {
     index.find((p) => p.isDefault) ?? (index.length > 0 ? ensureDefault(index)[0] : null);
   if (!defaultEntry) return null;
   return readValue<PixelRecord>(pixelKey(defaultEntry.id));
+}
+
+export async function deletePixel(input: DeletePixelInput): Promise<void> {
+  const { pixelId } = deletePixelSchema.parse(input);
+  const index = await getIndex();
+  const remaining = index.filter((entry) => entry.id !== pixelId);
+
+  if (remaining.length === index.length) return;
+
+  const finalIndex = ensureDefault(remaining);
+
+  await upsertItems([
+    { key: pixelKey(pixelId), operation: "delete" },
+    { key: PIXEL_INDEX_KEY, value: finalIndex },
+  ]);
 }

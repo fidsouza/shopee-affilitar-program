@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation";
 import { META_STANDARD_EVENTS, type MetaEvent } from "@/lib/meta-events";
+import { logDeleteOutcome } from "@/lib/logging";
+import { useConfirmDelete } from "@/lib/hooks/useConfirmDelete";
 import type { PixelRecord } from "@/lib/repos/pixels";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -27,6 +30,8 @@ export default function PixelAdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const confirmDelete = useConfirmDelete();
 
   const defaultPixelId = useMemo(
     () => pixels.find((p) => p.isDefault)?.id ?? null,
@@ -87,7 +92,42 @@ export default function PixelAdminPage() {
       setError(String(err));
     } finally {
       setSubmitting(false);
-    };
+    }
+  };
+
+  const handleDelete = async (pixel: PixelRecord) => {
+    const confirmed = await confirmDelete.requestConfirmation({
+      id: pixel.id,
+      label: pixel.label,
+    });
+    if (!confirmed) return;
+
+    setDeletingId(pixel.id);
+    setError(null);
+    const started = performance.now();
+    try {
+      const res = await fetch(`/api/pixels/${pixel.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? "Erro ao remover pixel");
+      }
+      setPixels((prev) => {
+        const remaining = prev.filter((p) => p.id !== pixel.id);
+        return remaining.sort((a, b) => a.label.localeCompare(b.label));
+      });
+      logDeleteOutcome("pixel", "success", {
+        pixelId: pixel.id,
+        durationMs: Math.round(performance.now() - started),
+      });
+    } catch (err) {
+      logDeleteOutcome("pixel", "failure", {
+        pixelId: pixel.id,
+        error: String(err),
+      });
+      setError(String(err));
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -205,12 +245,23 @@ export default function PixelAdminPage() {
                       </span>
                     ))}
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={deletingId === pixel.id}
+                      onClick={() => handleDelete(pixel)}
+                    >
+                      {deletingId === pixel.id ? "Removendo..." : "Remover"}
+                    </Button>
+                  </div>
                 </div>
               </li>
             ))}
           </ul>
         )}
       </div>
+      <DeleteConfirmationDialog state={confirmDelete} />
     </div>
   );
 }

@@ -2,7 +2,12 @@
 
 import type { MetaEvent } from "@/lib/meta-events";
 import { readValue, upsertItems } from "@/lib/edge-config";
-import { productLinkSchema, type ProductLinkInput } from "@/lib/validation";
+import {
+  deleteProductSchema,
+  productLinkSchema,
+  type DeleteProductInput,
+  type ProductLinkInput,
+} from "@/lib/validation";
 import { uuidv4 } from "@/lib/uuid";
 
 export type ProductRecord = ProductLinkInput & {
@@ -108,4 +113,18 @@ export async function getProductBySlug(slug: string): Promise<ProductRecord | nu
   if (!entry) return null;
   const record = await readValue<ProductRecord>(productKey(entry.id));
   return record ?? null;
+}
+
+export async function deleteProduct(input: DeleteProductInput): Promise<void> {
+  const { productId } = deleteProductSchema.parse(input);
+  const index = await getIndex();
+  const remaining = index.filter((item) => item.id !== productId);
+
+  // If not found, treat as idempotent success.
+  if (remaining.length === index.length) return;
+
+  await upsertItems([
+    { key: productKey(productId), operation: "delete" },
+    { key: PRODUCT_INDEX_KEY, value: remaining },
+  ]);
 }

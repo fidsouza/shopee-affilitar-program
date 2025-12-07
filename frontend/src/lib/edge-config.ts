@@ -1,10 +1,17 @@
 import { get, getAll } from "@vercel/edge-config";
 
-type EdgeConfigItem = {
+type EdgeConfigUpsertItem = {
   key: string;
   value: unknown;
-  operation?: "upsert" | "delete";
+  operation?: "upsert";
 };
+
+type EdgeConfigDeleteItem = {
+  key: string;
+  operation: "delete";
+};
+
+type EdgeConfigItem = EdgeConfigUpsertItem | EdgeConfigDeleteItem;
 
 const EDGE_CONFIG_URL = process.env.EDGE_CONFIG;
 const EDGE_CONFIG_REST_API_URL = process.env.EDGE_CONFIG_REST_API_URL;
@@ -32,7 +39,8 @@ function normalizeRestBase(): URL {
 export const isEdgeConfigConnected = Boolean(EDGE_CONFIG_URL);
 
 export async function readValue<T>(key: string): Promise<T | null> {
-  return get<T>(key);
+  const value = await get<T>(key);
+  return value ?? null;
 }
 
 export async function readValues<T extends Record<string, unknown>>(
@@ -50,11 +58,11 @@ export async function upsertItems(items: EdgeConfigItem[]): Promise<void> {
   const base = normalizeRestBase();
 
   const payload = {
-    items: items.map((item) => ({
-      operation: item.operation ?? "upsert",
-      key: item.key,
-      value: item.value,
-    })),
+    items: items.map((item) =>
+      item.operation === "delete"
+        ? { operation: "delete", key: item.key }
+        : { operation: "upsert", key: item.key, value: item.value },
+    ),
   };
 
   const url = new URL(base.toString().replace(/\/$/, "") + "/items");

@@ -23,3 +23,13 @@ export function logWarn(message: string, meta?: LogMeta) {
 export function logError(message: string, meta?: LogMeta) {
   emit("error", message, meta);
 }
+
+export function logDeleteOutcome(
+  entity: "product" | "pixel",
+  outcome: "success" | "failure",
+  meta?: LogMeta,
+) {
+  const prefix = outcome === "success" ? "Deleted" : "Delete failed";
+  const level: LogLevel = outcome === "success" ? "info" : "error";
+  emit(level, `${prefix} ${entity}`, meta);
+}
