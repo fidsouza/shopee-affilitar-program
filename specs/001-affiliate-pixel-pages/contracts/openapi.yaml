@@ -1,0 +1,231 @@
+openapi: 3.0.3
+info:
+  title: Affiliate Pixel Redirect API (MVP)
+  version: 0.1.0
+  description: Admin + transition endpoints for pixel configs and product redirect pages.
+servers:
+  - url: https://{domain}
+    variables:
+      domain:
+        default: example.com
+
+paths:
+  /api/pixels:
+    get:
+      summary: List pixel configurations
+      responses:
+        '200':
+          description: Pixel configs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PixelConfiguration'
+    post:
+      summary: Create or update pixel configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PixelConfigurationInput'
+      responses:
+        '200':
+          description: Upserted pixel configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PixelConfiguration'
+        '400':
+          description: Validation error
+
+  /api/pixels/{id}:
+    put:
+      summary: Update pixel configuration by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PixelConfigurationInput'
+      responses:
+        '200':
+          description: Updated pixel configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PixelConfiguration'
+        '400':
+          description: Validation error
+        '404':
+          description: Pixel not found
+
+  /api/products:
+    get:
+      summary: List product links
+      responses:
+        '200':
+          description: Product links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductLink'
+    post:
+      summary: Create or update product link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductLinkInput'
+      responses:
+        '200':
+          description: Upserted product link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductLink'
+        '400':
+          description: Validation error
+
+  /api/products/{id}:
+    put:
+      summary: Update product link by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductLinkInput'
+      responses:
+        '200':
+          description: Updated product link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductLink'
+        '400':
+          description: Validation error
+        '404':
+          description: Product not found
+
+  /t/{slug}:
+    get:
+      summary: Transition page entrypoint (public)
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to affiliate URL after firing events
+        '200':
+          description: Inactive/unavailable state (no events fired)
+        '404':
+          description: Transition link not found
+
+components:
+  schemas:
+    MetaEvent:
+      type: string
+      enum:
+        - PageView
+        - ViewContent
+        - AddToCart
+        - InitiateCheckout
+        - Lead
+        - Purchase
+        - AddPaymentInfo
+        - CompleteRegistration
+
+    PixelConfigurationInput:
+      type: object
+      required: [pixelId, label]
+      properties:
+        id:
+          type: string
+          description: Optional when creating; uuid
+        label:
+          type: string
+        pixelId:
+          type: string
+          pattern: '^[0-9]{10,20}$'
+        isDefault:
+          type: boolean
+          default: false
+        defaultEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetaEvent'
+
+    PixelConfiguration:
+      allOf:
+        - $ref: '#/components/schemas/PixelConfigurationInput'
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    ProductLinkInput:
+      type: object
+      required: [title, affiliateUrl, pixelConfigId, events, status]
+      properties:
+        id:
+          type: string
+          description: Optional when creating; uuid
+        title:
+          type: string
+        affiliateUrl:
+          type: string
+          format: uri
+        pixelConfigId:
+          type: string
+        events:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MetaEvent'
+        status:
+          type: string
+          enum: [active, inactive]
+
+    ProductLink:
+      allOf:
+        - $ref: '#/components/schemas/ProductLinkInput'
+        - type: object
+          required: [id, slug]
+          properties:
+            id:
+              type: string
+            slug:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time

@@ -1,1 +1,14 @@
 .codex/
+node_modules/
+.next/
+frontend/.next/
+dist/
+build/
+coverage/
+*.log
+.env*
+.DS_Store
+.idea/
+.vscode/
+frontend/.env.local
+frontend/.turbo/
