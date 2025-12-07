@@ -81,7 +81,7 @@ export default async function TransitionPage({ params }: PageProps) {
         <p className="text-sm text-muted-foreground">Preparando redirecionamento...</p>
         <h1 className="text-2xl font-semibold">{product.title}</h1>
         <p className="text-muted-foreground">
-          Vamos disparar os eventos configurados e redirecionar para o destino do afiliado.
+          Estamos carregando a pagina do produto.
         </p>
         <ClientTracker
           pixelId={pixel.pixelId}
