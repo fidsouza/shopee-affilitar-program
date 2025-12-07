@@ -48,6 +48,12 @@ export function ClientTracker({ pixelId, events, eventId, targetUrl }: Props) {
 
     w.fbq?.("init", pixelId);
 
+    // Always send at least a PageView so the Pixel is marked as active by Meta Pixel Helper
+    if (!sent.current.has("PageView")) {
+      w.fbq?.("track", "PageView", {}, { eventID: eventId });
+      sent.current.add("PageView");
+    }
+
     events.forEach((ev) => {
       if (sent.current.has(ev)) return;
       w.fbq?.("track", ev, {}, { eventID: eventId });
@@ -56,7 +62,7 @@ export function ClientTracker({ pixelId, events, eventId, targetUrl }: Props) {
 
     const timeout = setTimeout(() => {
       window.location.href = targetUrl;
-    }, 1200);
+    }, 2500);
 
     return () => clearTimeout(timeout);
   }, [eventId, events, pixelId, targetUrl]);
