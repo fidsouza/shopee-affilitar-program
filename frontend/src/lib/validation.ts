@@ -4,6 +4,7 @@ import { META_STANDARD_EVENTS, type MetaEvent } from "./meta-events";
 
 const metaEventEnum = z.enum(META_STANDARD_EVENTS);
 const allowedHosts = ["shopee", "aliexpress", "mercadolivre", "amazon"];
+const uuidString = z.string().uuid("ID inválido");
 
 function dedupeEvents(events: MetaEvent[]): MetaEvent[] {
   return Array.from(new Set(events));
@@ -45,10 +46,7 @@ export const productLinkSchema = z
       .min(1, "Informe a URL do afiliado")
       .refine(isAllowedAffiliateHost, "URL deve ser https e pertencer a shopee/aliexpress/mercadolivre/amazon"),
     pixelConfigId: z.string().min(1, "Selecione um pixel"),
-    events: z
-      .array(metaEventEnum, { invalid_type_error: "Selecione pelo menos um evento" })
-      .min(1, "Selecione pelo menos um evento")
-      .transform(dedupeEvents),
+    events: z.array(metaEventEnum).min(1, "Selecione pelo menos um evento").transform(dedupeEvents),
     status: z.enum(["active", "inactive"]),
   })
   .refine(
@@ -61,3 +59,15 @@ export const productLinkSchema = z
   );
 
 export type ProductLinkInput = z.infer<typeof productLinkSchema>;
+
+export const deleteProductSchema = z.object({
+  productId: uuidString,
+});
+
+export type DeleteProductInput = z.infer<typeof deleteProductSchema>;
+
+export const deletePixelSchema = z.object({
+  pixelId: uuidString,
+});
+
+export type DeletePixelInput = z.infer<typeof deletePixelSchema>;

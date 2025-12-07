@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { META_STANDARD_EVENTS, type MetaEvent } from "@/lib/meta-events";
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation";
+import { logDeleteOutcome } from "@/lib/logging";
+import { useConfirmDelete } from "@/lib/hooks/useConfirmDelete";
 import type { PixelRecord } from "@/lib/repos/pixels";
 import type { ProductRecord } from "@/lib/repos/products";
 import { Button } from "@/components/ui/button";
@@ -31,6 +34,8 @@ export default function ProductAdminPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const confirmDelete = useConfirmDelete();
 
   const defaultPixel = useMemo(
     () => pixels.find((p) => p.isDefault) ?? pixels[0] ?? null,
@@ -116,6 +121,38 @@ export default function ProductAdminPage() {
       await navigator.clipboard.writeText(transitionUrl(slug));
     } catch (err) {
       setError(`Falha ao copiar link: ${err}`);
+    }
+  };
+
+  const handleDelete = async (product: ProductRecord) => {
+    const confirmed = await confirmDelete.requestConfirmation({
+      id: product.id,
+      label: product.title,
+    });
+    if (!confirmed) return;
+
+    setDeletingId(product.id);
+    setError(null);
+    const started = performance.now();
+    try {
+      const res = await fetch(`/api/products/${product.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? "Erro ao remover produto");
+      }
+      setProducts((prev) => prev.filter((p) => p.id !== product.id));
+      logDeleteOutcome("product", "success", {
+        productId: product.id,
+        durationMs: Math.round(performance.now() - started),
+      });
+    } catch (err) {
+      logDeleteOutcome("product", "failure", {
+        productId: product.id,
+        error: String(err),
+      });
+      setError(String(err));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -275,6 +312,14 @@ export default function ProductAdminPage() {
                     <Button variant="secondary" size="sm" onClick={() => copyLink(product.slug)}>
                       Copiar link
                     </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={deletingId === product.id}
+                      onClick={() => handleDelete(product)}
+                    >
+                      {deletingId === product.id ? "Removendo..." : "Remover"}
+                    </Button>
                     <a
                       className="text-xs text-primary underline"
                       href={`/t/${product.slug}`}
@@ -290,6 +335,7 @@ export default function ProductAdminPage() {
           </ul>
         )}
       </div>
+      <DeleteConfirmationDialog state={confirmDelete} />
     </div>
   );
 }
