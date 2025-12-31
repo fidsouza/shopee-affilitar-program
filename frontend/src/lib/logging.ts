@@ -25,7 +25,7 @@ export function logError(message: string, meta?: LogMeta) {
 }
 
 export function logDeleteOutcome(
-  entity: "product" | "pixel",
+  entity: "product" | "pixel" | "whatsapp_page",
   outcome: "success" | "failure",
   meta?: LogMeta,
 ) {

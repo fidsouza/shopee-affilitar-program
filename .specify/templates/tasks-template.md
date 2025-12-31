@@ -12,10 +12,6 @@ description: "Task list template for feature implementation"
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
-**Constitution Alignment**: Include tasks for lint/format gates, UX acceptance
-checks (states + accessibility), and performance budget measurement with the
-stated load assumptions.
-
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
@@ -156,10 +152,7 @@ Examples of foundational tasks (adjust based on your project):
 
 - [ ] TXXX [P] Documentation updates in docs/
 - [ ] TXXX Code cleanup and refactoring
-- [ ] TXXX Validate UX against design tokens/components and accessibility (WCAG
-  2.1 AA)
-- [ ] TXXX Performance validation against budgets; add profiling/metrics if
-  missing
+- [ ] TXXX Performance optimization across all stories
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
