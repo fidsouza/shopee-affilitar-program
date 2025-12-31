@@ -96,7 +96,7 @@
   - `/admin` retorna 404
   - `/parametrizacao` mostra dashboard
   - Emoji 🏷️ aparece na aba do navegador
-- [ ] T016 Fazer commit das mudanças com mensagem descritiva
+- [x] T016 Fazer commit das mudanças com mensagem descritiva
 
 ---
 
