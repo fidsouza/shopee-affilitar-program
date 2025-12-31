@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Affiliate Pixel Redirect",
-  description: "Admin e páginas de transição para afiliados",
+  title: "🏷️",
+  description: "",
 };
 
 export default function RootLayout({
