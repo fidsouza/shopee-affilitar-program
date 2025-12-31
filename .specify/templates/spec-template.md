@@ -100,24 +100,6 @@
 - **[Entity 1]**: [What it represents, key attributes without implementation]
 - **[Entity 2]**: [What it represents, relationships to other entities]
 
-### User Experience Standards
-
-- **UX-001**: Use approved design tokens/components; list any new patterns with
-  rationale.
-- **UX-002**: Document states (loading/empty/error/success) and accessibility
-  behaviors (focus order, keyboard navigation, ARIA labels) that meet WCAG 2.1
-  AA.
-- **UX-003**: Provide screenshots or flows for critical journeys to aid review.
-
-### Performance Requirements
-
-- **PRF-001**: State performance budget with load assumptions (e.g., target p95
-  latency, render time on baseline devices) and how it will be measured.
-- **PRF-002**: Identify instrumentation or profiling needed to verify the
-  budget.
-- **PRF-003**: List known risk areas for regressions (e.g., large payloads,
-  animation-heavy views) and mitigations.
-
 ## Success Criteria *(mandatory)*
 
 <!--

@@ -3,7 +3,7 @@
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
-**Note**: This template is filled in by the `/speckit.plan` command (when available).
+**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
@@ -31,13 +31,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- Clean Code Discipline: linters/formatters configured; unit coverage defined for
-  new logic; dependencies justified with benefits.
-- Consistent User Experience: design tokens/components chosen; UX states
-  (loading/empty/error/success) captured; accessibility plan meets WCAG 2.1 AA.
-- Performance & Efficiency: performance budget declared with load assumptions;
-  measurement/observability approach identified; regressions treated as blockers
-  unless a dated waiver with owner is recorded.
+[Gates determined based on constitution file]
 
 ## Project Structure
 

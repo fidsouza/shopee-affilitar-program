@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/admin/products", label: "Cadastrar Produto" },
   { href: "/admin/pixels", label: "Cadastrar Pixel" },
+  { href: "/admin/whatsapp", label: "Páginas WhatsApp" },
   { href: "/admin/defaults", label: "Configurações padrão" },
 ];
 

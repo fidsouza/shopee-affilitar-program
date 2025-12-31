@@ -71,3 +71,49 @@ export const deletePixelSchema = z.object({
 });
 
 export type DeletePixelInput = z.infer<typeof deletePixelSchema>;
+
+// WhatsApp Page Validation
+const allowedWhatsAppHosts = ["chat.whatsapp.com", "wa.me"];
+
+function isAllowedWhatsAppHost(urlString: string): boolean {
+  try {
+    const parsed = new URL(urlString);
+    if (parsed.protocol !== "https:") return false;
+    return allowedWhatsAppHosts.some(
+      (host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
+export const whatsAppPageSchema = z.object({
+  id: z.string().uuid().optional(),
+  headline: z.string().min(1, "Informe uma headline").max(200, "Headline muito longa (máx. 200 caracteres)"),
+  headerImageUrl: z
+    .string()
+    .url("URL de imagem inválida")
+    .refine((url) => url.startsWith("https://"), "URL deve usar HTTPS")
+    .optional()
+    .or(z.literal("")),
+  socialProofs: z.array(z.string()).default([]),
+  buttonText: z.string().min(1, "Informe o texto do botão").max(100, "Texto do botão muito longo (máx. 100 caracteres)"),
+  whatsappUrl: z
+    .string()
+    .min(1, "Informe a URL do WhatsApp")
+    .refine(isAllowedWhatsAppHost, "URL deve ser do WhatsApp (chat.whatsapp.com ou wa.me)"),
+  pixelConfigId: z.string().uuid().optional().or(z.literal("")),
+  // Updated 2025-12-31: Multi-event support
+  events: z.array(metaEventEnum).min(1, "Selecione pelo menos um evento").transform(dedupeEvents),
+  redirectEvent: metaEventEnum,
+  redirectDelay: z.number().int().min(1, "Mínimo 1 segundo").max(30, "Máximo 30 segundos").default(5),
+  status: z.enum(["active", "inactive"]),
+});
+
+export type WhatsAppPageInput = z.infer<typeof whatsAppPageSchema>;
+
+export const deleteWhatsAppPageSchema = z.object({
+  pageId: uuidString,
+});
+
+export type DeleteWhatsAppPageInput = z.infer<typeof deleteWhatsAppPageSchema>;
