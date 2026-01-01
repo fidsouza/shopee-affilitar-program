@@ -85,6 +85,8 @@ Optional:
 - Vercel Edge Config (REST API) - pattern: index + individual records (003-whatsapp-redirect-page)
 - TypeScript 5, Node.js 20 + Next.js 16.0.7 (App Router), React 19, Tailwind CSS, shadcn/ui, Zod 4.1 (003-whatsapp-redirect-page)
 - N/A (não há mudanças de dados) (004-home-page-update)
+- TypeScript 5, Node.js 20 + Next.js 16.0.7 (App Router), React 19, Tailwind CSS, shadcn/ui (Radix UI), Zod 4.1 (005-whatsapp-benefit-cards)
+- Vercel Edge Config (REST API) - padrão: index + registros individuais (005-whatsapp-benefit-cards)
 
 ## Recent Changes
 - 004-home-page-update: Home page simplificada para "Página em Construção", rota admin renomeada para /parametrizacao

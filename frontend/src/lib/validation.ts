@@ -72,6 +72,24 @@ export const deletePixelSchema = z.object({
 
 export type DeletePixelInput = z.infer<typeof deletePixelSchema>;
 
+// Benefit Card Validation
+export const benefitCardSchema = z.object({
+  emoji: z.string()
+    .min(1, "Emoji é obrigatório")
+    .max(2, "Emoji deve ter no máximo 2 caracteres"),
+  title: z.string()
+    .min(1, "Título é obrigatório")
+    .max(50, "Título deve ter no máximo 50 caracteres"),
+  description: z.string()
+    .max(150, "Descrição deve ter no máximo 150 caracteres")
+    .optional(),
+});
+
+export type BenefitCard = z.infer<typeof benefitCardSchema>;
+
+export const emojiSizeSchema = z.enum(["small", "medium", "large"]).default("medium");
+export type EmojiSize = z.infer<typeof emojiSizeSchema>;
+
 // WhatsApp Page Validation
 const allowedWhatsAppHosts = ["chat.whatsapp.com", "wa.me"];
 
@@ -108,6 +126,11 @@ export const whatsAppPageSchema = z.object({
   redirectEvent: metaEventEnum,
   redirectDelay: z.number().int().min(1, "Mínimo 1 segundo").max(30, "Máximo 30 segundos").default(5),
   status: z.enum(["active", "inactive"]),
+  // Benefit Cards - added 2026-01-01
+  benefitCards: z.array(benefitCardSchema)
+    .max(8, "Máximo de 8 benefit cards por página")
+    .default([]),
+  emojiSize: emojiSizeSchema,
 });
 
 export type WhatsAppPageInput = z.infer<typeof whatsAppPageSchema>;
