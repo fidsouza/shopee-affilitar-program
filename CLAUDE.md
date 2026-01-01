@@ -34,11 +34,13 @@ yarn lint         # ESLint check
 ```
 frontend/src/
 ├── app/
-│   ├── (root)/           # Landing page
-│   ├── admin/            # Admin dashboard (client components)
+│   ├── (root)/           # "Página em Construção" - landing page simples
+│   ├── parametrizacao/   # Admin dashboard (client components) - acessível via /parametrizacao
 │   │   ├── products/     # Product CRUD
-│   │   └── pixels/       # Pixel configuration
+│   │   ├── pixels/       # Pixel configuration
+│   │   └── whatsapp/     # WhatsApp group pages
 │   ├── t/[slug]/         # Transition pages (Edge Runtime)
+│   ├── w/[slug]/         # WhatsApp redirect pages
 │   └── api/              # REST endpoints for products & pixels
 ├── components/
 │   └── ui/               # shadcn components
@@ -82,6 +84,8 @@ Optional:
 - TypeScript 5, Node.js 20 + Next.js 16 (App Router), React 19, Tailwind CSS, shadcn/ui, Zod 4.1 (003-whatsapp-redirect-page)
 - Vercel Edge Config (REST API) - pattern: index + individual records (003-whatsapp-redirect-page)
 - TypeScript 5, Node.js 20 + Next.js 16.0.7 (App Router), React 19, Tailwind CSS, shadcn/ui, Zod 4.1 (003-whatsapp-redirect-page)
+- N/A (não há mudanças de dados) (004-home-page-update)
 
 ## Recent Changes
+- 004-home-page-update: Home page simplificada para "Página em Construção", rota admin renomeada para /parametrizacao
 - 003-whatsapp-redirect-page: Added TypeScript 5, Node.js 20 + Next.js 16 (App Router), React 19, Tailwind CSS, shadcn/ui, Zod 4.1

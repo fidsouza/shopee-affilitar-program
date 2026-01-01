@@ -6,10 +6,10 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/admin/products", label: "Cadastrar Produto" },
-  { href: "/admin/pixels", label: "Cadastrar Pixel" },
-  { href: "/admin/whatsapp", label: "Páginas WhatsApp" },
-  { href: "/admin/defaults", label: "Configurações padrão" },
+  { href: "/parametrizacao/products", label: "Cadastrar Produto" },
+  { href: "/parametrizacao/pixels", label: "Cadastrar Pixel" },
+  { href: "/parametrizacao/whatsapp", label: "Páginas WhatsApp" },
+  { href: "/parametrizacao/defaults", label: "Configurações padrão" },
 ];
 
 function SideNav() {
