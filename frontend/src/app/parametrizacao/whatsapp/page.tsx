@@ -8,10 +8,24 @@ import { logDeleteOutcome } from "@/lib/logging";
 import { useConfirmDelete } from "@/lib/hooks/useConfirmDelete";
 import type { PixelRecord } from "@/lib/repos/pixels";
 import type { WhatsAppPageRecord } from "@/lib/repos/whatsapp-pages";
+import type { BenefitCard, EmojiSize } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const EMOJI_SIZE_OPTIONS: { value: EmojiSize; label: string }[] = [
+  { value: "small", label: "Pequeno" },
+  { value: "medium", label: "Medio" },
+  { value: "large", label: "Grande" },
+];
+
+const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
+  small: "text-2xl",
+  medium: "text-4xl",
+  large: "text-6xl",
+};
+
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
+// Updated 2026-01-01: Benefit cards support (benefitCards[] + emojiSize)
 type FormState = {
   id?: string;
   headline: string;
@@ -24,6 +38,8 @@ type FormState = {
   redirectEvent: MetaEvent;
   redirectDelay: number;
   status: "active" | "inactive";
+  benefitCards: BenefitCard[];
+  emojiSize: EmojiSize;
 };
 
 const initialForm: FormState = {
@@ -37,6 +53,8 @@ const initialForm: FormState = {
   redirectEvent: "CompleteRegistration",
   redirectDelay: 5,
   status: "active",
+  benefitCards: [],
+  emojiSize: "medium",
 };
 
 export default function WhatsAppAdminPage() {
@@ -102,12 +120,20 @@ export default function WhatsAppAdminPage() {
       .filter(Boolean);
 
     try {
+      // Filter out incomplete benefit cards before submitting
+      const validBenefitCards = form.benefitCards.filter(
+        (card) => card.emoji && card.title
+      );
+
       const payload = {
         ...form,
         socialProofs,
         // Always include headerImageUrl (even empty string) so API knows whether to clear or preserve
         headerImageUrl: form.headerImageUrl,
         pixelConfigId: form.pixelConfigId || undefined,
+        // Updated 2026-01-01: Benefit cards support
+        benefitCards: validBenefitCards,
+        emojiSize: form.emojiSize,
       };
 
       const res = await fetch("/api/whatsapp", {
@@ -155,6 +181,9 @@ export default function WhatsAppAdminPage() {
       redirectEvent: page.redirectEvent,
       redirectDelay: page.redirectDelay,
       status: page.status,
+      // Updated 2026-01-01: Benefit cards support
+      benefitCards: page.benefitCards ?? [],
+      emojiSize: page.emojiSize ?? "medium",
     });
     setSocialProofsText(page.socialProofs.join("\n"));
     setEditingId(page.id);
@@ -378,6 +407,162 @@ export default function WhatsAppAdminPage() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Benefit Cards Section */}
+        <div className="grid gap-4 rounded-md border bg-accent/30 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-sm font-medium">Benefit Cards (opcional)</label>
+              <p className="text-xs text-muted-foreground">
+                Cards com beneficios exibidos antes do botao (max. 8)
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted-foreground">Tamanho emoji:</label>
+              <select
+                value={form.emojiSize}
+                onChange={(e) => setForm((prev) => ({ ...prev, emojiSize: e.target.value as EmojiSize }))}
+                className="rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                {EMOJI_SIZE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Existing Cards List */}
+          {form.benefitCards.length > 0 && (
+            <div className="space-y-2">
+              {form.benefitCards.map((card, idx) => (
+                <div key={idx} className="flex items-start gap-2 rounded-md border bg-background p-3">
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => {
+                        const newCards = [...form.benefitCards];
+                        [newCards[idx - 1], newCards[idx]] = [newCards[idx], newCards[idx - 1]];
+                        setForm((prev) => ({ ...prev, benefitCards: newCards }));
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      disabled={idx === form.benefitCards.length - 1}
+                      onClick={() => {
+                        const newCards = [...form.benefitCards];
+                        [newCards[idx], newCards[idx + 1]] = [newCards[idx + 1], newCards[idx]];
+                        setForm((prev) => ({ ...prev, benefitCards: newCards }));
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    >
+                      ↓
+                    </button>
+                  </div>
+                  <span className={cn("flex-shrink-0", EMOJI_SIZE_CLASSES[form.emojiSize])}>
+                    {card.emoji}
+                  </span>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <input
+                      value={card.emoji}
+                      onChange={(e) => {
+                        const newCards = [...form.benefitCards];
+                        newCards[idx] = { ...newCards[idx], emoji: e.target.value.slice(0, 2) };
+                        setForm((prev) => ({ ...prev, benefitCards: newCards }));
+                      }}
+                      placeholder="Emoji"
+                      maxLength={2}
+                      className="w-16 rounded border bg-background px-2 py-1 text-sm"
+                    />
+                    <input
+                      value={card.title}
+                      onChange={(e) => {
+                        const newCards = [...form.benefitCards];
+                        newCards[idx] = { ...newCards[idx], title: e.target.value };
+                        setForm((prev) => ({ ...prev, benefitCards: newCards }));
+                      }}
+                      placeholder="Titulo (obrigatorio)"
+                      maxLength={50}
+                      className="w-full rounded border bg-background px-2 py-1 text-sm"
+                    />
+                    <input
+                      value={card.description || ""}
+                      onChange={(e) => {
+                        const newCards = [...form.benefitCards];
+                        newCards[idx] = { ...newCards[idx], description: e.target.value || undefined };
+                        setForm((prev) => ({ ...prev, benefitCards: newCards }));
+                      }}
+                      placeholder="Descricao (opcional)"
+                      maxLength={150}
+                      className="w-full rounded border bg-background px-2 py-1 text-sm"
+                    />
+                    {(!card.emoji || !card.title) && (
+                      <p className="text-xs text-destructive">Emoji e titulo sao obrigatorios</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm((prev) => ({
+                        ...prev,
+                        benefitCards: prev.benefitCards.filter((_, i) => i !== idx),
+                      }));
+                    }}
+                    className="text-destructive hover:text-destructive/80 text-sm px-2"
+                  >
+                    Remover
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add New Card Button */}
+          {form.benefitCards.length < 8 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setForm((prev) => ({
+                  ...prev,
+                  benefitCards: [
+                    ...prev.benefitCards,
+                    { emoji: "", title: "", description: undefined },
+                  ],
+                }));
+              }}
+            >
+              + Adicionar Benefit Card
+            </Button>
+          )}
+          {form.benefitCards.length >= 8 && (
+            <p className="text-xs text-muted-foreground">Limite de 8 cards atingido</p>
+          )}
+
+          {/* Preview Section */}
+          {form.benefitCards.length > 0 && form.benefitCards.some(c => c.emoji && c.title) && (
+            <div className="mt-2">
+              <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {form.benefitCards
+                  .filter(c => c.emoji && c.title)
+                  .map((card, idx) => (
+                    <div key={idx} className="rounded-lg border bg-white p-3 text-center">
+                      <span className={EMOJI_SIZE_CLASSES[form.emojiSize]}>{card.emoji}</span>
+                      <h4 className="font-bold text-sm mt-1">{card.title}</h4>
+                      {card.description && (
+                        <p className="text-xs text-muted-foreground mt-1">{card.description}</p>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}

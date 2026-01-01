@@ -5,43 +5,56 @@ import { readValue, upsertItems } from "@/lib/edge-config";
 import {
   deleteWhatsAppPageSchema,
   whatsAppPageSchema,
+  type BenefitCard,
   type DeleteWhatsAppPageInput,
+  type EmojiSize,
   type WhatsAppPageInput,
 } from "@/lib/validation";
 import { uuidv4 } from "@/lib/uuid";
 import { logInfo, logError } from "@/lib/logging";
 
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
-export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId'> & {
+// Updated 2026-01-01: Benefit cards support (benefitCards[] + emojiSize)
+export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize'> & {
   id: string;
   slug: string;
   headerImageUrl?: string;
   pixelConfigId?: string;
+  benefitCards: BenefitCard[];
+  emojiSize: EmojiSize;
   createdAt: string;
   updatedAt: string;
 };
 
-// Legacy type for migration from buttonEvent to events/redirectEvent
-type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent'> & {
+// Legacy type for migration from buttonEvent to events/redirectEvent and missing benefitCards
+type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent' | 'benefitCards' | 'emojiSize'> & {
   buttonEvent?: MetaEvent;
   events?: MetaEvent[];
   redirectEvent?: MetaEvent;
+  benefitCards?: BenefitCard[];
+  emojiSize?: EmojiSize;
 };
 
-// Migrate legacy record to new format
+// Migrate legacy record to new format (backward compatibility)
 function migrateRecord(record: LegacyWhatsAppPageRecord): WhatsAppPageRecord {
-  // If already has events and redirectEvent, no migration needed
-  if (record.events && record.redirectEvent) {
-    return record as WhatsAppPageRecord;
+  // Start with record as base
+  let migrated = { ...record } as WhatsAppPageRecord;
+
+  // Migrate from buttonEvent to events/redirectEvent if needed
+  if (!record.events || !record.redirectEvent) {
+    const buttonEvent = record.buttonEvent as MetaEvent;
+    migrated = {
+      ...migrated,
+      events: record.events ?? [buttonEvent],
+      redirectEvent: record.redirectEvent ?? buttonEvent,
+    };
   }
 
-  // Migrate from buttonEvent to events/redirectEvent
-  const buttonEvent = record.buttonEvent as MetaEvent;
-  return {
-    ...record,
-    events: record.events ?? [buttonEvent],
-    redirectEvent: record.redirectEvent ?? buttonEvent,
-  } as WhatsAppPageRecord;
+  // Add default benefitCards and emojiSize if missing (backward compatibility)
+  migrated.benefitCards = record.benefitCards ?? [];
+  migrated.emojiSize = record.emojiSize ?? "medium";
+
+  return migrated;
 }
 
 type WhatsAppPageIndexEntry = {
@@ -146,6 +159,9 @@ export async function upsertWhatsAppPage(input: WhatsAppPageInput): Promise<What
     redirectEvent: parsed.redirectEvent,
     redirectDelay: parsed.redirectDelay,
     status: parsed.status,
+    // Updated 2026-01-01: Benefit cards support
+    benefitCards: parsed.benefitCards ?? existing?.benefitCards ?? [],
+    emojiSize: parsed.emojiSize ?? existing?.emojiSize ?? "medium",
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };

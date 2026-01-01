@@ -2,6 +2,14 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import type { WhatsAppPageRecord } from "@/lib/repos/whatsapp-pages";
+import type { EmojiSize } from "@/lib/validation";
+
+// Emoji size CSS classes mapping
+const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
+  small: "text-2xl",
+  medium: "text-4xl",
+  large: "text-6xl",
+};
 
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
 type Props = {
@@ -118,7 +126,7 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
   }, [handleRedirect]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-50 to-white p-4">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white p-4">
       <div className="flex max-w-md flex-col items-center gap-6 text-center">
         {/* Header Image */}
         {page.headerImageUrl && (
@@ -186,6 +194,32 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
           />
         </div>
       </div>
+
+      {/* Benefit Cards Grid - Updated 2026-01-01 - Full width section below countdown */}
+      {page.benefitCards && page.benefitCards.length > 0 && (
+        <div className="w-full max-w-5xl px-4 mt-8">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {page.benefitCards.map((card, idx) => (
+              <div
+                key={idx}
+                className="flex flex-col items-center rounded-lg border border-green-100 bg-white p-5 shadow-sm"
+              >
+                <span className={EMOJI_SIZE_CLASSES[page.emojiSize ?? "medium"]}>
+                  {card.emoji}
+                </span>
+                <h3 className="mt-2 font-bold text-gray-900">
+                  {card.title}
+                </h3>
+                {card.description && (
+                  <p className="mt-1 text-sm text-gray-600 text-center">
+                    {card.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
