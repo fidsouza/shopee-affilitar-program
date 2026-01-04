@@ -131,6 +131,13 @@ export const whatsAppPageSchema = z.object({
     .max(8, "Máximo de 8 benefit cards por página")
     .default([]),
   emojiSize: emojiSizeSchema,
+  // Social Proof Notifications - added 2026-01-03
+  socialProofEnabled: z.boolean().default(false),
+  socialProofInterval: z.number()
+    .int("Intervalo deve ser número inteiro")
+    .min(5, "Intervalo mínimo: 5 segundos")
+    .max(60, "Intervalo máximo: 60 segundos")
+    .default(10),
 });
 
 export type WhatsAppPageInput = z.infer<typeof whatsAppPageSchema>;

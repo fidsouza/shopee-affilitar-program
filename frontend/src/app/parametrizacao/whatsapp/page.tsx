@@ -26,6 +26,7 @@ const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
 
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
 // Updated 2026-01-01: Benefit cards support (benefitCards[] + emojiSize)
+// Updated 2026-01-03: Social proof notifications (socialProofEnabled + socialProofInterval)
 type FormState = {
   id?: string;
   headline: string;
@@ -40,6 +41,8 @@ type FormState = {
   status: "active" | "inactive";
   benefitCards: BenefitCard[];
   emojiSize: EmojiSize;
+  socialProofEnabled: boolean;
+  socialProofInterval: number;
 };
 
 const initialForm: FormState = {
@@ -55,6 +58,8 @@ const initialForm: FormState = {
   status: "active",
   benefitCards: [],
   emojiSize: "medium",
+  socialProofEnabled: false,
+  socialProofInterval: 10,
 };
 
 export default function WhatsAppAdminPage() {
@@ -134,6 +139,9 @@ export default function WhatsAppAdminPage() {
         // Updated 2026-01-01: Benefit cards support
         benefitCards: validBenefitCards,
         emojiSize: form.emojiSize,
+        // Updated 2026-01-03: Social proof notifications
+        socialProofEnabled: form.socialProofEnabled,
+        socialProofInterval: form.socialProofInterval,
       };
 
       const res = await fetch("/api/whatsapp", {
@@ -184,6 +192,9 @@ export default function WhatsAppAdminPage() {
       // Updated 2026-01-01: Benefit cards support
       benefitCards: page.benefitCards ?? [],
       emojiSize: page.emojiSize ?? "medium",
+      // Updated 2026-01-03: Social proof notifications
+      socialProofEnabled: page.socialProofEnabled ?? false,
+      socialProofInterval: page.socialProofInterval ?? 10,
     });
     setSocialProofsText(page.socialProofs.join("\n"));
     setEditingId(page.id);
@@ -565,6 +576,46 @@ export default function WhatsAppAdminPage() {
           )}
         </div>
 
+        {/* Social Proof Notifications Section */}
+        <div className="grid gap-4 rounded-md border bg-accent/30 p-4">
+          <div>
+            <label className="text-sm font-medium">Notificações de Prova Social</label>
+            <p className="text-xs text-muted-foreground">
+              Exibe notificações como &quot;Priscila de São Paulo acabou de entrar no grupo!&quot;
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.socialProofEnabled}
+                onChange={(e) => setForm((prev) => ({ ...prev, socialProofEnabled: e.target.checked }))}
+                className="rounded border-gray-300 h-4 w-4"
+              />
+              <span className="text-sm">Habilitar notificações</span>
+            </label>
+          </div>
+
+          {form.socialProofEnabled && (
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Intervalo entre notificações (segundos)</label>
+              <input
+                type="number"
+                min={5}
+                max={60}
+                value={form.socialProofInterval}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 10;
+                  setForm((prev) => ({ ...prev, socialProofInterval: Math.min(60, Math.max(5, val)) }));
+                }}
+                className="w-32 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+              <p className="text-xs text-muted-foreground">Mínimo: 5s | Máximo: 60s | Padrão: 10s</p>
+            </div>
+          )}
+        </div>
+
         {error && <p className="text-sm text-destructive">{error}</p>}
         {success && <p className="text-sm text-green-600">{success}</p>}
 
@@ -622,16 +673,23 @@ export default function WhatsAppAdminPage() {
                   )}
                 </div>
                 <div className="flex flex-col items-start gap-2 sm:items-end">
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-1 text-xs",
-                      page.status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-zinc-200 text-zinc-800",
+                  <div className="flex gap-2">
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-1 text-xs",
+                        page.status === "active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-zinc-200 text-zinc-800",
+                      )}
+                    >
+                      {page.status === "active" ? "Ativo" : "Inativo"}
+                    </span>
+                    {page.socialProofEnabled && (
+                      <span className="rounded-full px-2 py-1 text-xs bg-blue-100 text-blue-800">
+                        Prova Social
+                      </span>
                     )}
-                  >
-                    {page.status === "active" ? "Ativo" : "Inativo"}
-                  </span>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <Button variant="secondary" size="sm" onClick={() => copyLink(page.slug)}>
                       Copiar link

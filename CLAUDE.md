@@ -87,6 +87,9 @@ Optional:
 - N/A (não há mudanças de dados) (004-home-page-update)
 - TypeScript 5, Node.js 20 + Next.js 16.0.7 (App Router), React 19, Tailwind CSS, shadcn/ui (Radix UI), Zod 4.1 (005-whatsapp-benefit-cards)
 - Vercel Edge Config (REST API) - padrão: index + registros individuais (005-whatsapp-benefit-cards)
+- TypeScript 5, Node.js 20 + Next.js 16.0.7 (App Router), React 19, Tailwind CSS, Zod 4.1, shadcn/ui (Radix UI) (007-social-proof-notification)
+- TypeScript 5, Node.js 20 + Next.js 16.0.7, React 19, Tailwind CSS, shadcn/ui (Radix UI) (008-privacy-policy)
+- N/A (conteúdo estático, sem persistência) (008-privacy-policy)
 
 ## Recent Changes
 - 004-home-page-update: Home page simplificada para "Página em Construção", rota admin renomeada para /parametrizacao

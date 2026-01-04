@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import type { WhatsAppPageRecord } from "@/lib/repos/whatsapp-pages";
 import type { EmojiSize } from "@/lib/validation";
+import { SocialProofNotification } from "@/components/social-proof-notification";
 
 // Emoji size CSS classes mapping
 const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
@@ -219,6 +220,11 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
             ))}
           </div>
         </div>
+      )}
+
+      {/* Social Proof Notification - Updated 2026-01-03 */}
+      {page.socialProofEnabled && (
+        <SocialProofNotification interval={page.socialProofInterval} />
       )}
     </main>
   );
