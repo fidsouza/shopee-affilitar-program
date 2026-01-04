@@ -15,24 +15,29 @@ import { logInfo, logError } from "@/lib/logging";
 
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
 // Updated 2026-01-01: Benefit cards support (benefitCards[] + emojiSize)
-export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize'> & {
+// Updated 2026-01-03: Social proof notifications (socialProofEnabled + socialProofInterval)
+export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval'> & {
   id: string;
   slug: string;
   headerImageUrl?: string;
   pixelConfigId?: string;
   benefitCards: BenefitCard[];
   emojiSize: EmojiSize;
+  socialProofEnabled: boolean;
+  socialProofInterval: number;
   createdAt: string;
   updatedAt: string;
 };
 
-// Legacy type for migration from buttonEvent to events/redirectEvent and missing benefitCards
-type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent' | 'benefitCards' | 'emojiSize'> & {
+// Legacy type for migration from buttonEvent to events/redirectEvent and missing fields
+type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval'> & {
   buttonEvent?: MetaEvent;
   events?: MetaEvent[];
   redirectEvent?: MetaEvent;
   benefitCards?: BenefitCard[];
   emojiSize?: EmojiSize;
+  socialProofEnabled?: boolean;
+  socialProofInterval?: number;
 };
 
 // Migrate legacy record to new format (backward compatibility)
@@ -53,6 +58,10 @@ function migrateRecord(record: LegacyWhatsAppPageRecord): WhatsAppPageRecord {
   // Add default benefitCards and emojiSize if missing (backward compatibility)
   migrated.benefitCards = record.benefitCards ?? [];
   migrated.emojiSize = record.emojiSize ?? "medium";
+
+  // Add default socialProof fields if missing (backward compatibility)
+  migrated.socialProofEnabled = record.socialProofEnabled ?? false;
+  migrated.socialProofInterval = record.socialProofInterval ?? 10;
 
   return migrated;
 }
@@ -162,6 +171,9 @@ export async function upsertWhatsAppPage(input: WhatsAppPageInput): Promise<What
     // Updated 2026-01-01: Benefit cards support
     benefitCards: parsed.benefitCards ?? existing?.benefitCards ?? [],
     emojiSize: parsed.emojiSize ?? existing?.emojiSize ?? "medium",
+    // Updated 2026-01-03: Social proof notifications
+    socialProofEnabled: parsed.socialProofEnabled ?? existing?.socialProofEnabled ?? false,
+    socialProofInterval: parsed.socialProofInterval ?? existing?.socialProofInterval ?? 10,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };

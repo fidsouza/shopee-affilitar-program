@@ -59,3 +59,41 @@
     font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
 }
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  a {
+    color: black !important;
+    text-decoration: underline;
+  }
+
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  nav[aria-label="Índice"] {
+    display: none;
+  }
+
+  .bg-muted\/30,
+  .bg-muted\/50 {
+    background: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+  }
+
+  h1, h2 {
+    page-break-after: avoid;
+  }
+
+  section {
+    page-break-inside: avoid;
+  }
+}
