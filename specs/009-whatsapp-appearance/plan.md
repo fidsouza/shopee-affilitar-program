@@ -1,25 +1,28 @@
-# Implementation Plan: Página de Política de Privacidade + Personalização WhatsApp
+# Implementation Plan: Personalização Visual das Páginas de WhatsApp
 
-**Branch**: `008-privacy-policy` | **Date**: 2026-01-04 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/008-privacy-policy/spec.md`
+**Branch**: `009-whatsapp-appearance` | **Date**: 2026-01-04 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/009-whatsapp-appearance/spec.md`
 
 ## Summary
 
-Esta feature inclui duas partes:
-1. **Página de Política de Privacidade**: Página estática acessível via `/politica-de-privacidade` contendo todas as seções obrigatórias para conformidade com LGPD e requisitos do Meta para campanhas de lead ads.
-2. **Personalização Visual das Páginas WhatsApp**: Configuração global para customizar o texto de "redirecionando" e a aparência da caixa (cor de fundo, toggle de borda) nas páginas `/w/[slug]`.
+Configuração global para customizar o texto de "redirecionando" e a aparência da caixa (cor de fundo, toggle de borda) nas páginas `/w/[slug]`.
+
+**Funcionalidades**:
+- Texto de redirecionamento personalizável
+- Cor de fundo configurável (formato hexadecimal)
+- Toggle de borda (ativa/desativa)
+- Interface de administração em /parametrizacao/whatsapp
 
 ## Technical Context
 
 **Language/Version**: TypeScript 5, Node.js 20
 **Primary Dependencies**: Next.js 16.0.7 (App Router), React 19, Tailwind CSS, shadcn/ui (Radix UI), Zod 4.1
-**Storage**: Vercel Edge Config (REST API) - padrão: index + registros individuais
+**Storage**: Vercel Edge Config (REST API) - chave única `whatsapp_appearance`
 **Testing**: ESLint (lint check via `yarn lint`)
 **Target Platform**: Web (Vercel Edge Runtime para páginas de transição)
 **Project Type**: Web application (frontend monorepo)
-**Performance Goals**: Página de privacidade carrega < 3s em 3G
-**Constraints**: Responsivo a partir de 320px, sem scroll horizontal
-**Scale/Scope**: Página estática + 1 configuração global no Edge Config
+**Performance Goals**: Páginas /w/[slug] carregam < 2s, config retorna < 100ms
+**Scale/Scope**: 1 configuração global no Edge Config
 
 ## Constitution Check
 
@@ -38,12 +41,12 @@ O projeto não possui uma constitution definida (template placeholder). Não há
 ### Documentation (this feature)
 
 ```text
-specs/008-privacy-policy/
+specs/009-whatsapp-appearance/
 ├── plan.md              # This file
 ├── research.md          # Phase 0 output
 ├── data-model.md        # Phase 1 output
 ├── quickstart.md        # Phase 1 output
-├── contracts/           # Phase 1 output (N/A - sem API nova)
+├── contracts/           # Phase 1 output (API endpoints)
 └── tasks.md             # Phase 2 output (/speckit.tasks)
 ```
 
@@ -53,8 +56,6 @@ specs/008-privacy-policy/
 frontend/
 ├── src/
 │   ├── app/
-│   │   ├── politica-de-privacidade/
-│   │   │   └── page.tsx           # Página estática de política (já existe, atualizar)
 │   │   ├── w/[slug]/
 │   │   │   ├── page.tsx           # Server component (atualizar para carregar config)
 │   │   │   └── client.tsx         # Client component (atualizar para usar config)
@@ -65,17 +66,13 @@ frontend/
 │   │       └── whatsapp/
 │   │           └── appearance/
 │   │               └── route.ts   # API endpoint para config de aparência
-│   ├── components/
-│   │   └── privacy-policy/
-│   │       ├── policy-section.tsx # Componente de seção (já existe)
-│   │       └── types.ts           # Types (já existe)
 │   └── lib/
 │       ├── repos/
 │       │   └── whatsapp-appearance.ts  # Novo repo para config de aparência
 │       └── validation.ts          # Adicionar schema para aparência
 ```
 
-**Structure Decision**: Web application com frontend monorepo. A página de política já existe em `/politica-de-privacidade`. A personalização de aparência será adicionada ao admin existente `/parametrizacao/whatsapp`.
+**Structure Decision**: Web application com frontend monorepo. A personalização de aparência será adicionada ao admin existente `/parametrizacao/whatsapp`.
 
 ## Complexity Tracking
 
@@ -86,3 +83,4 @@ Nenhuma violação de constitution detectada. Implementação segue padrões exi
 | Storage | Edge Config (chave única) | Seguir padrão existente de `whatsapp_pages_*` |
 | UI | Seção na página existente | Não criar nova rota, reaproveitar layout |
 | Escopo | Global para todas /w/ | Conforme clarificado na spec |
+| Borda | Cor fixa #e5e7eb | Simplicidade, conforme clarificado |

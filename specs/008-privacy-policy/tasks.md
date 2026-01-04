@@ -1,11 +1,13 @@
-# Tasks: Página de Política de Privacidade para Lead Ads
+# Tasks: Política de Privacidade + Personalização Visual WhatsApp
 
 **Input**: Design documents from `/specs/008-privacy-policy/`
-**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
+**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, quickstart.md
 
 **Tests**: Não requisitados - apenas lint check via `yarn lint`
 
 **Organization**: Tasks são agrupadas por user story para permitir implementação e teste independente de cada história.
+
+**Status**: User Stories 1-3 (Política de Privacidade) ✅ COMPLETAS | User Story 4 (Personalização WhatsApp) 🔨 PENDENTE
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -103,7 +105,50 @@
 
 ---
 
-## Phase 6: Polish & Cross-Cutting Concerns
+## Phase 6: User Story 4 - Personalização Visual das Páginas WhatsApp (Priority: P2) 🎯 NEW
+
+**Goal**: Administrador pode personalizar texto e aparência da caixa de redirecionamento nas páginas /w/[slug]
+
+**Independent Test**:
+1. Acessar http://localhost:3000/parametrizacao/whatsapp
+2. Configurar texto personalizado, cor de fundo e toggle de borda
+3. Salvar configuração
+4. Acessar qualquer página /w/[slug] e verificar mudanças aplicadas
+
+### Foundational Tasks for US4
+
+- [ ] T030 [US4] Add WhatsAppAppearanceConfig type and schema to `frontend/src/lib/validation.ts`
+- [ ] T031 [US4] Create whatsapp-appearance repository in `frontend/src/lib/repos/whatsapp-appearance.ts`
+
+### API Layer for US4
+
+- [ ] T032 [P] [US4] Create GET handler for appearance config in `frontend/src/app/api/whatsapp/appearance/route.ts`
+- [ ] T033 [P] [US4] Create PUT handler for appearance config in `frontend/src/app/api/whatsapp/appearance/route.ts`
+
+### Admin UI for US4
+
+- [ ] T034 [US4] Add appearance state management (form state, loading, error, success) in `frontend/src/app/parametrizacao/whatsapp/page.tsx`
+- [ ] T035 [US4] Add appearance form section UI with text input in `frontend/src/app/parametrizacao/whatsapp/page.tsx`
+- [ ] T036 [US4] Add color picker input for background color in `frontend/src/app/parametrizacao/whatsapp/page.tsx`
+- [ ] T037 [US4] Add toggle switch for border enabled in `frontend/src/app/parametrizacao/whatsapp/page.tsx`
+- [ ] T038 [US4] Implement load appearance config on page mount in `frontend/src/app/parametrizacao/whatsapp/page.tsx`
+- [ ] T039 [US4] Implement save appearance config handler in `frontend/src/app/parametrizacao/whatsapp/page.tsx`
+
+### Public Page Integration for US4
+
+- [ ] T040 [US4] Import and call getWhatsAppAppearance in server component `frontend/src/app/w/[slug]/page.tsx`
+- [ ] T041 [US4] Pass appearance config as prop to WhatsAppRedirectClient in `frontend/src/app/w/[slug]/page.tsx`
+- [ ] T042 [US4] Add appearance prop type to WhatsAppRedirectClient in `frontend/src/app/w/[slug]/client.tsx`
+- [ ] T043 [US4] Apply custom redirect text from appearance config in `frontend/src/app/w/[slug]/client.tsx`
+- [ ] T044 [US4] Apply background color from appearance config (inline style) in `frontend/src/app/w/[slug]/client.tsx`
+- [ ] T045 [US4] Apply border styling when borderEnabled is true in `frontend/src/app/w/[slug]/client.tsx`
+- [ ] T046 [US4] Implement fallback to default values when config is undefined in `frontend/src/app/w/[slug]/client.tsx`
+
+**Checkpoint**: User Story 4 completa - personalização de aparência funcional em todas as páginas /w/
+
+---
+
+## Phase 7: Polish & Cross-Cutting Concerns
 
 **Purpose**: Melhorias que afetam múltiplas user stories
 
@@ -112,88 +157,99 @@
 - [x] T028 Executar `yarn build` para verificar build de produção
 - [x] T029 Validar página seguindo checklist do `quickstart.md`
 
+### New Polish Tasks for US4
+
+- [ ] T047 Run yarn lint and fix any errors related to US4 changes
+- [ ] T048 Test complete flow: admin config → save → public page displays custom appearance
+- [ ] T049 Test edge case: missing config uses default values (text: "Redirecionando...", no border, no background)
+- [ ] T050 Run yarn build and verify production build succeeds
+- [ ] T051 Validate US4 following quickstart.md Part 2 checklist
+
 ---
 
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: Sem dependências - pode começar imediatamente
-- **Foundational (Phase 2)**: Depende de Setup - BLOQUEIA todas as user stories
-- **User Stories (Phase 3+)**: Dependem da fase Foundational
-  - US1 (P1): Pode começar após Foundational - MVP
-  - US2 (P1): Pode ser implementada junto com US1 (mesmo arquivo, classes Tailwind)
-  - US3 (P2): Pode começar após Foundational - melhoria de navegação
-- **Polish (Phase 6)**: Depende de todas as user stories desejadas estarem completas
+- **Setup (Phase 1)**: ✅ Completo
+- **Foundational (Phase 2)**: ✅ Completo
+- **User Story 1 (Phase 3)**: ✅ Completo - Política de Privacidade
+- **User Story 2 (Phase 4)**: ✅ Completo - Responsividade Mobile
+- **User Story 3 (Phase 5)**: ✅ Completo - Navegação e Acessibilidade
+- **User Story 4 (Phase 6)**: 🔨 PENDENTE - Personalização WhatsApp
+  - Depende de T030-T031 (schema + repo) antes de API/UI
+- **Polish (Phase 7)**: Depende de US4 estar completa
 
-### User Story Dependencies
+### User Story 4 Dependencies
 
-- **User Story 1 (P1)**: Pode começar após Foundational (Phase 2) - Sem dependências de outras stories
-- **User Story 2 (P1)**: Na prática, implementada junto com US1 pois são classes Tailwind no mesmo arquivo
-- **User Story 3 (P2)**: Pode começar após Foundational (Phase 2) - Adiciona navegação à página existente
+- **T030-T031 (Foundational)**: Sem dependências - pode começar imediatamente
+- **T032-T033 (API)**: Dependem de T030-T031 - podem rodar em paralelo entre si
+- **T034-T039 (Admin UI)**: Dependem de T032-T033 - sequenciais
+- **T040-T046 (Public Page)**: Dependem de T032-T033 - podem iniciar após API pronta
+- **T047-T051 (Polish)**: Dependem de todas as tarefas US4
 
-### Within Each User Story
+### Parallel Opportunities for US4
 
-- Seções da política podem ser implementadas em paralelo por diferentes desenvolvedores
-- Preferência por implementar em ordem numérica para manter organização
-- Story complete antes de passar para próxima prioridade
-
-### Parallel Opportunities
-
-- T001 e T002 podem rodar em paralelo (Setup)
-- T003 e T004 podem rodar em paralelo (Foundational)
-- T006-T016 poderiam ser paralelizadas se múltiplos desenvolvedores disponíveis
-- T026 e T027 podem rodar em paralelo (Polish)
+- T032 e T033 podem rodar em paralelo (mesmo arquivo, handlers independentes)
+- Admin UI (T034-T039) e Public Page (T040-T046) podem ser desenvolvidas em paralelo após API pronta
 
 ---
 
-## Parallel Example: User Story 1
+## Parallel Example: User Story 4
 
 ```bash
-# Como esta é uma página estática simples, a maior oportunidade de paralelização
-# seria com múltiplos desenvolvedores escrevendo diferentes seções:
+# Após T030-T031 (Foundational), lançar API handlers em paralelo:
+Task: "Create GET handler in frontend/src/app/api/whatsapp/appearance/route.ts"
+Task: "Create PUT handler in frontend/src/app/api/whatsapp/appearance/route.ts"
 
-# Desenvolvedor A:
-Task: "Adicionar seção 1-4 (Introdução, Controlador, Dados, Finalidade)"
-
-# Desenvolvedor B:
-Task: "Adicionar seção 5-8 (Base Legal, Compartilhamento, Retenção, Direitos)"
-
-# Desenvolvedor C:
-Task: "Adicionar seção 9-11 (Exercício, Cookies, Atualizações)"
+# Após API pronta, Admin UI e Public Page podem ser desenvolvidas em paralelo:
+# Developer A: Admin UI (T034-T039)
+# Developer B: Public Page (T040-T046)
 ```
 
 ---
 
 ## Implementation Strategy
 
-### MVP First (User Story 1 Only)
+### Current Status
 
-1. Complete Phase 1: Setup (2 tasks)
-2. Complete Phase 2: Foundational (2 tasks)
-3. Complete Phase 3: User Story 1 (13 tasks)
-4. **STOP and VALIDATE**: Testar página em `http://localhost:3000/politica-de-privacidade`
-5. Deploy/demo se pronto - já atende requisitos do Meta para lead ads
+- ✅ User Stories 1-3 (Política de Privacidade): COMPLETAS
+- 🔨 User Story 4 (Personalização WhatsApp): PENDENTE
 
-### Incremental Delivery
+### US4 Implementation Order
 
-1. Complete Setup + Foundational → Fundação pronta
-2. Add User Story 1 → Test → Deploy (MVP! Página funcional)
-3. Add User Story 2 → Test → Deploy (Mobile otimizado)
-4. Add User Story 3 → Test → Deploy (Navegação melhorada)
-5. Add Polish → Test → Deploy final
+1. Complete T030-T031: Schema + Repository
+2. Complete T032-T033: API endpoints
+3. **STOP and VALIDATE**: Test API via curl
+4. Complete T034-T039: Admin UI
+5. **STOP and VALIDATE**: Test admin interface
+6. Complete T040-T046: Public page integration
+7. **STOP and VALIDATE**: End-to-end test
+8. Complete T047-T051: Polish
 
-### Estimativa de Tarefas por Story
+### Estimativa de Tarefas
 
-| Story | Tarefas | Descrição |
-|-------|---------|-----------|
-| Setup | 2 | Criação de diretórios |
-| Foundational | 2 | Tipos e componente base |
-| User Story 1 | 13 | Página com 11 seções + validação |
-| User Story 2 | 4 | Responsividade mobile |
-| User Story 3 | 4 | Navegação e acessibilidade |
-| Polish | 4 | Impressão, lint, build, validação |
-| **Total** | **29** | - |
+| Phase | Story | Tarefas | Status |
+|-------|-------|---------|--------|
+| Setup | - | 2 | ✅ Completo |
+| Foundational | - | 2 | ✅ Completo |
+| Phase 3 | US1 | 13 | ✅ Completo |
+| Phase 4 | US2 | 4 | ✅ Completo |
+| Phase 5 | US3 | 4 | ✅ Completo |
+| Phase 6 | US4 | 17 | 🔨 Pendente |
+| Phase 7 | Polish | 9 | 🔨 Pendente (5 novos) |
+| **Total** | - | **51** | 29 ✅ / 22 🔨 |
+
+### Tarefas Pendentes por Categoria (US4)
+
+| Categoria | Tarefas | IDs |
+|-----------|---------|-----|
+| Foundational | 2 | T030-T031 |
+| API Layer | 2 | T032-T033 |
+| Admin UI | 6 | T034-T039 |
+| Public Page | 7 | T040-T046 |
+| Polish | 5 | T047-T051 |
+| **Total US4** | **22** | - |
 
 ---
 
@@ -204,4 +260,5 @@ Task: "Adicionar seção 9-11 (Exercício, Cookies, Atualizações)"
 - Cada user story deve ser completável e testável independentemente
 - Commit após cada task ou grupo lógico
 - Parar em qualquer checkpoint para validar story independentemente
-- Evitar: tasks vagas, conflitos no mesmo arquivo, dependências entre stories que quebram independência
+- User Stories 1-3 já completas e funcionais
+- User Story 4 é nova implementação completa

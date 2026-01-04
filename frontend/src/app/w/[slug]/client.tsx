@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import type { WhatsAppPageRecord } from "@/lib/repos/whatsapp-pages";
+import type { WhatsAppAppearanceRecord } from "@/lib/repos/whatsapp-appearance";
 import type { EmojiSize } from "@/lib/validation";
 import { SocialProofNotification } from "@/components/social-proof-notification";
 
@@ -13,14 +14,16 @@ const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
 };
 
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
+// Updated 2026-01-04: Global appearance configuration
 type Props = {
   page: WhatsAppPageRecord;
   pixelId?: string;
   eventId: string;
   redirectEventId: string;
+  appearance: WhatsAppAppearanceRecord;
 };
 
-export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId }: Props) {
+export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId, appearance }: Props) {
   const [countdown, setCountdown] = useState(page.redirectDelay);
   const hasTrackedPageEvents = useRef(false);
   const hasTrackedRedirect = useRef(false);
@@ -180,10 +183,40 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
           {page.buttonText}
         </a>
 
-        {/* Countdown */}
-        <p className="text-sm text-gray-500">
-          Redirecionando em <span className="font-bold text-green-600">{countdown}</span> segundos...
-        </p>
+        {/* Countdown - Updated 2026-01-04: Global appearance configuration */}
+        <div
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm ${
+            appearance.borderEnabled ? "border border-gray-200" : ""
+          }`}
+          style={{
+            backgroundColor: appearance.backgroundColor || "transparent",
+          }}
+        >
+          <svg
+            className="h-4 w-4 animate-spin text-gray-500"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          <span className="text-gray-500">
+            {appearance.redirectText.replace("...", "")} em{" "}
+            <span className="font-bold text-green-600">{countdown}</span> segundos...
+          </span>
+        </div>
 
         {/* Progress bar */}
         <div className="h-1 w-48 overflow-hidden rounded-full bg-gray-200">

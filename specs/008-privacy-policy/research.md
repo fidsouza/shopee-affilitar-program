@@ -154,6 +154,67 @@ Fornecer email de contato para exercício de direitos do titular.
 
 ---
 
+## 9. Personalização Visual das Páginas WhatsApp
+
+### Decisão
+Criar configuração global de aparência para as páginas `/w/[slug]` com texto customizável, cor de fundo e toggle de borda.
+
+### Racional
+- Clarificação do usuário: configuração é global para todas as páginas WhatsApp
+- Escopo mínimo: texto, cor de fundo, toggle de borda (sim/não)
+- Cor da borda fixa (#e5e7eb) quando habilitada
+
+### Implementação Técnica
+
+| Aspecto | Decisão |
+|---------|---------|
+| Storage Key | `whatsapp_appearance` |
+| Location | Edge Config (singleton) |
+| Schema | `{ redirectText: string, backgroundColor?: string, borderEnabled: boolean }` |
+| Admin UI | Seção em `/parametrizacao/whatsapp` |
+| API | `/api/whatsapp/appearance` (GET/PUT) |
+| Repo | `lib/repos/whatsapp-appearance.ts` |
+
+### Valores Padrão
+- `redirectText`: "Redirecionando..."
+- `backgroundColor`: undefined (transparente)
+- `borderEnabled`: false
+- Cor da borda quando habilitada: `#e5e7eb` (gray-200)
+
+### Alternativas Consideradas
+- Configuração por página → Rejeitado: usuário especificou global
+- Configuração por Pixel → Rejeitado: usuário especificou global
+- Mais opções de estilo (padding, shadow) → Rejeitado: usuário especificou escopo mínimo
+
+---
+
+## 10. Padrões do Projeto Identificados
+
+### Repository Pattern
+Todos os acessos a dados passam por `lib/repos/*.ts` com `'use server'`.
+
+### Validação
+Schemas Zod centralizados em `lib/validation.ts`.
+
+### Edge Config
+- Leitura: `readValue<T>(key)`
+- Escrita: `upsertItems([{ key, value }])`
+
+### Componentes Client/Server
+- `page.tsx`: Server component (Edge Runtime)
+- `client.tsx`: Client component com interatividade
+
+---
+
 ## Conclusão
 
-Todas as decisões técnicas e de conteúdo foram tomadas. Não há NEEDS CLARIFICATION restantes. A implementação pode prosseguir para Phase 1.
+Todas as decisões técnicas e de conteúdo foram tomadas. Não há NEEDS CLARIFICATION restantes.
+
+### Status por Funcionalidade
+
+| Funcionalidade | Status |
+|----------------|--------|
+| Página de Política de Privacidade | ✅ Já implementada |
+| Personalização Visual WhatsApp | 🔨 Pronta para implementação |
+
+A implementação pode prosseguir para Phase 1.

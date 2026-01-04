@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 
 import { META_STANDARD_EVENTS, type MetaEvent } from "@/lib/meta-events";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation";
@@ -8,9 +8,17 @@ import { logDeleteOutcome } from "@/lib/logging";
 import { useConfirmDelete } from "@/lib/hooks/useConfirmDelete";
 import type { PixelRecord } from "@/lib/repos/pixels";
 import type { WhatsAppPageRecord } from "@/lib/repos/whatsapp-pages";
+import type { WhatsAppAppearanceRecord } from "@/lib/repos/whatsapp-appearance";
 import type { BenefitCard, EmojiSize } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+// Appearance form state type
+type AppearanceFormState = {
+  redirectText: string;
+  backgroundColor: string;
+  borderEnabled: boolean;
+};
 
 const EMOJI_SIZE_OPTIONS: { value: EmojiSize; label: string }[] = [
   { value: "small", label: "Pequeno" },
@@ -75,6 +83,16 @@ export default function WhatsAppAdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const confirmDelete = useConfirmDelete();
 
+  // Appearance configuration state
+  const [appearanceForm, setAppearanceForm] = useState<AppearanceFormState>({
+    redirectText: "Redirecionando...",
+    backgroundColor: "",
+    borderEnabled: false,
+  });
+  const [appearanceLoading, setAppearanceLoading] = useState(true);
+  const [appearanceSaving, setAppearanceSaving] = useState(false);
+  const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(null);
+
   const defaultPixel = useMemo(
     () => pixels.find((p) => p.isDefault) ?? pixels[0] ?? null,
     [pixels],
@@ -84,9 +102,10 @@ export default function WhatsAppAdminPage() {
     let cancelled = false;
     const load = async () => {
       try {
-        const [pixelsRes, pagesRes] = await Promise.all([
+        const [pixelsRes, pagesRes, appearanceRes] = await Promise.all([
           fetch("/api/pixels", { cache: "no-store" }),
           fetch("/api/whatsapp", { cache: "no-store" }),
+          fetch("/api/whatsapp/appearance", { cache: "no-store" }),
         ]);
         if (!pixelsRes.ok || !pagesRes.ok) throw new Error("Erro ao carregar dados");
         const [pixelsData, pagesData] = (await Promise.all([
@@ -100,10 +119,23 @@ export default function WhatsAppAdminPage() {
           ...prev,
           pixelConfigId: prev.pixelConfigId || defaultPixel?.id || "",
         }));
+
+        // Load appearance config
+        if (appearanceRes.ok) {
+          const appearanceData = await appearanceRes.json() as WhatsAppAppearanceRecord;
+          setAppearanceForm({
+            redirectText: appearanceData.redirectText,
+            backgroundColor: appearanceData.backgroundColor || "",
+            borderEnabled: appearanceData.borderEnabled,
+          });
+        }
       } catch (err) {
         if (!cancelled) setError(String(err));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setAppearanceLoading(false);
+        }
       }
     };
     load();
@@ -248,6 +280,33 @@ export default function WhatsAppAdminPage() {
     }
   };
 
+  const handleSaveAppearance = useCallback(async () => {
+    setAppearanceSaving(true);
+    setAppearanceSuccess(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/whatsapp/appearance", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          redirectText: appearanceForm.redirectText,
+          backgroundColor: appearanceForm.backgroundColor || undefined,
+          borderEnabled: appearanceForm.borderEnabled,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Erro ao salvar aparência");
+      }
+      setAppearanceSuccess("Configuração de aparência salva com sucesso!");
+      setTimeout(() => setAppearanceSuccess(null), 3000);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setAppearanceSaving(false);
+    }
+  }, [appearanceForm]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -255,6 +314,138 @@ export default function WhatsAppAdminPage() {
         <p className="text-muted-foreground">
           Crie páginas de redirecionamento para grupos de WhatsApp com headline, provas sociais e tracking.
         </p>
+      </div>
+
+      {/* Global Appearance Configuration */}
+      <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">Aparência Global</h2>
+          <p className="text-xs text-muted-foreground">
+            Configurações visuais aplicadas a todas as páginas de redirecionamento /w/[slug]
+          </p>
+        </div>
+
+        {appearanceLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando configuração...</p>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Texto de Redirecionamento</label>
+              <input
+                value={appearanceForm.redirectText}
+                onChange={(e) =>
+                  setAppearanceForm((prev) => ({ ...prev, redirectText: e.target.value }))
+                }
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Redirecionando..."
+                maxLength={100}
+              />
+              <p className="text-xs text-muted-foreground">Texto exibido na caixa de redirecionamento (máx. 100 caracteres)</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Cor de Fundo (opcional)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={appearanceForm.backgroundColor || "#ffffff"}
+                    onChange={(e) =>
+                      setAppearanceForm((prev) => ({ ...prev, backgroundColor: e.target.value }))
+                    }
+                    className="h-10 w-14 cursor-pointer rounded border"
+                  />
+                  <input
+                    value={appearanceForm.backgroundColor}
+                    onChange={(e) =>
+                      setAppearanceForm((prev) => ({ ...prev, backgroundColor: e.target.value }))
+                    }
+                    className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="#RRGGBB"
+                    maxLength={7}
+                  />
+                  {appearanceForm.backgroundColor && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAppearanceForm((prev) => ({ ...prev, backgroundColor: "" }))}
+                    >
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">Formato hexadecimal (#RRGGBB) ou deixe vazio para transparente</p>
+              </div>
+
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Borda</label>
+                <div className="flex items-center gap-3 pt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={appearanceForm.borderEnabled}
+                      onChange={(e) =>
+                        setAppearanceForm((prev) => ({ ...prev, borderEnabled: e.target.checked }))
+                      }
+                      className="rounded border-gray-300 h-4 w-4"
+                    />
+                    <span className="text-sm">{appearanceForm.borderEnabled ? "Habilitada" : "Desabilitada"}</span>
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground">Borda cinza (#e5e7eb) ao redor da caixa</p>
+              </div>
+            </div>
+
+            {/* Appearance Preview */}
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Preview</label>
+              <div className="flex justify-center rounded-md border bg-zinc-100 p-6">
+                <div
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium",
+                    appearanceForm.borderEnabled && "border border-gray-200"
+                  )}
+                  style={{
+                    backgroundColor: appearanceForm.backgroundColor || "transparent",
+                  }}
+                >
+                  <svg
+                    className="h-4 w-4 animate-spin"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  {appearanceForm.redirectText || "Redirecionando..."}
+                </div>
+              </div>
+            </div>
+
+            {appearanceSuccess && <p className="text-sm text-green-600">{appearanceSuccess}</p>}
+
+            <Button
+              type="button"
+              onClick={handleSaveAppearance}
+              disabled={appearanceSaving || !appearanceForm.redirectText.trim()}
+            >
+              {appearanceSaving ? "Salvando..." : "Salvar Aparência"}
+            </Button>
+          </div>
+        )}
       </div>
 
       <form className="space-y-4 rounded-lg border bg-card p-4 shadow-sm" onSubmit={handleSubmit}>

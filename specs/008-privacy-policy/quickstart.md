@@ -1,4 +1,4 @@
-# Quickstart: Página de Política de Privacidade
+# Quickstart: Política de Privacidade + Personalização WhatsApp
 
 **Feature**: 008-privacy-policy
 **Date**: 2026-01-04
@@ -109,3 +109,106 @@ yarn start
 
 - Executar `yarn lint` para verificar erros
 - Verificar importações de componentes
+
+---
+
+# Parte 2: Personalização Visual das Páginas WhatsApp
+
+## Verificação da Feature
+
+### 1. Admin: Configurar Aparência
+
+1. Acesse: `http://localhost:3000/parametrizacao/whatsapp`
+2. Localize a seção "Aparência" (no topo da página)
+3. Configure:
+   - **Texto de Redirecionamento**: ex: "Aguarde, estamos te levando..."
+   - **Cor de Fundo**: selecione uma cor ou digite hex (#f0fdf4)
+   - **Habilitar Borda**: toggle on/off
+4. Clique em "Salvar"
+
+### 2. Página Pública: Verificar Mudanças
+
+1. Crie ou use uma página WhatsApp existente
+2. Acesse: `http://localhost:3000/w/[slug-da-pagina]`
+3. Verifique:
+   - O texto personalizado é exibido
+   - A cor de fundo é aplicada
+   - A borda aparece (se habilitada)
+
+## Estrutura de Arquivos (Personalização)
+
+```text
+frontend/src/
+├── app/
+│   ├── parametrizacao/
+│   │   └── whatsapp/
+│   │       └── page.tsx       # Adicionar seção de Aparência
+│   ├── w/[slug]/
+│   │   ├── page.tsx           # Carregar config de aparência
+│   │   └── client.tsx         # Aplicar estilos personalizados
+│   └── api/
+│       └── whatsapp/
+│           └── appearance/
+│               └── route.ts   # GET/PUT endpoint
+└── lib/
+    ├── repos/
+    │   └── whatsapp-appearance.ts  # Repository
+    └── validation.ts               # Schema Zod
+```
+
+## Checklist de Verificação (Personalização)
+
+### Admin (/parametrizacao/whatsapp)
+- [ ] Seção "Aparência" visível
+- [ ] Campo de texto para "Texto de Redirecionamento"
+- [ ] Color picker para cor de fundo
+- [ ] Toggle para habilitar borda
+- [ ] Botão "Salvar" funciona
+- [ ] Mensagem de sucesso após salvar
+- [ ] Valores carregam corretamente ao reabrir página
+
+### Página Pública (/w/[slug])
+- [ ] Texto personalizado exibido (não mais "Redirecionando...")
+- [ ] Cor de fundo aplicada corretamente
+- [ ] Borda cinza (#e5e7eb) quando habilitada
+- [ ] Fallback para padrões quando config não existe
+
+### API (/api/whatsapp/appearance)
+- [ ] GET retorna config atual ou padrões
+- [ ] PUT atualiza config corretamente
+- [ ] Validação de formato hex funciona
+- [ ] Validação de texto vazio funciona
+
+## Testando via cURL
+
+```bash
+# GET - Obter configuração atual
+curl http://localhost:3000/api/whatsapp/appearance
+
+# PUT - Atualizar configuração
+curl -X PUT http://localhost:3000/api/whatsapp/appearance \
+  -H "Content-Type: application/json" \
+  -d '{
+    "redirectText": "Aguarde um momento...",
+    "backgroundColor": "#f0fdf4",
+    "borderEnabled": true
+  }'
+```
+
+## Troubleshooting (Personalização)
+
+### Configuração não salva
+
+- Verificar se `EDGE_CONFIG_REST_API_URL` e `EDGE_CONFIG_REST_TOKEN` estão configurados
+- Verificar logs de erro no console do servidor
+
+### Estilos não aplicam na página /w/
+
+- Verificar se a configuração foi salva (GET no endpoint)
+- Limpar cache: `rm -rf .next && yarn dev`
+- Verificar se o client component está recebendo a prop `appearance`
+
+### Cor de fundo inválida
+
+- Formato deve ser `#RRGGBB` (6 caracteres após #)
+- Exemplos válidos: `#ffffff`, `#f0fdf4`, `#10b981`
