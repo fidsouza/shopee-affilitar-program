@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 
 import { WhatsAppRedirectClient } from "./client";
 import { getWhatsAppPageBySlug } from "@/lib/repos/whatsapp-pages";
+import { getWhatsAppAppearance } from "@/lib/repos/whatsapp-appearance";
 import { readValue } from "@/lib/edge-config";
 import type { PixelRecord } from "@/lib/repos/pixels";
 import { generateEventId, sendConversionEvent } from "@/lib/conversion-api";
@@ -38,6 +39,9 @@ export default async function WhatsAppRedirectPage({ params }: PageProps) {
       });
     }
   }
+
+  // Get global appearance configuration
+  const appearance = await getWhatsAppAppearance();
 
   // Updated 2025-12-31: Multi-event support
   const eventId = generateEventId();
@@ -87,6 +91,7 @@ export default async function WhatsAppRedirectPage({ params }: PageProps) {
       pixelId={pixel?.pixelId}
       eventId={eventId}
       redirectEventId={redirectEventId}
+      appearance={appearance}
     />
   );
 }

@@ -1,11 +1,13 @@
-# Data Model: Página de Política de Privacidade para Lead Ads
+# Data Model: Página de Política de Privacidade + Personalização WhatsApp
 
 **Feature**: 008-privacy-policy
 **Date**: 2026-01-04
 
 ## Visão Geral
 
-Esta feature não requer persistência de dados. O conteúdo da política de privacidade é estático e definido diretamente no código-fonte.
+Esta feature inclui:
+1. **Página de Política de Privacidade**: Conteúdo estático definido no código-fonte (sem persistência)
+2. **Personalização Visual WhatsApp**: Configuração global persistida no Edge Config
 
 ## Entidades Conceituais
 
@@ -76,9 +78,134 @@ PolicyPage
 | Email de contato | Deve ser um email válido |
 | Conteúdo em pt-BR | Todo o texto deve estar em português brasileiro |
 
-## Notas de Implementação
+## Notas de Implementação (Política de Privacidade)
 
 - O conteúdo é hardcoded como constantes TypeScript
 - Não há necessidade de banco de dados ou Edge Config
 - As seções podem ser componentizadas para melhor manutenibilidade
 - A data de atualização pode ser definida como constante e atualizada manualmente quando houver mudanças
+
+---
+
+# Entidades Persistidas (Personalização WhatsApp)
+
+## WhatsAppAppearanceConfig
+
+Configuração global de aparência para as páginas de redirecionamento WhatsApp (`/w/[slug]`).
+
+### Schema
+
+```typescript
+interface WhatsAppAppearanceConfig {
+  redirectText: string;         // Texto exibido durante redirecionamento
+  backgroundColor?: string;     // Cor de fundo em formato hex (ex: "#ffffff")
+  borderEnabled: boolean;       // Se a caixa deve ter borda
+  updatedAt: string;           // ISO timestamp da última atualização
+}
+```
+
+### Campos
+
+| Campo | Tipo | Obrigatório | Padrão | Descrição |
+|-------|------|-------------|--------|-----------|
+| redirectText | string | Sim | "Redirecionando..." | Texto exibido na caixa de redirecionamento |
+| backgroundColor | string | Não | undefined | Cor de fundo em formato hexadecimal (#RRGGBB) |
+| borderEnabled | boolean | Sim | false | Ativa/desativa borda na caixa |
+| updatedAt | string | Sim | - | Data/hora da última atualização (ISO 8601) |
+
+### Validações (Zod Schema)
+
+```typescript
+const whatsAppAppearanceSchema = z.object({
+  redirectText: z.string()
+    .min(1, "Texto é obrigatório")
+    .max(100, "Texto muito longo (máx. 100 caracteres)"),
+  backgroundColor: z.string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Cor deve estar em formato hexadecimal (#RRGGBB)")
+    .optional(),
+  borderEnabled: z.boolean().default(false),
+});
+```
+
+### Persistência
+
+| Aspecto | Valor |
+|---------|-------|
+| Storage | Vercel Edge Config |
+| Key | `whatsapp_appearance` |
+| Pattern | Singleton (única config global) |
+
+### Valores Padrão (quando config não existe)
+
+```typescript
+const DEFAULT_APPEARANCE: WhatsAppAppearanceConfig = {
+  redirectText: "Redirecionando...",
+  backgroundColor: undefined,
+  borderEnabled: false,
+  updatedAt: new Date().toISOString(),
+};
+```
+
+### Estilo da Borda (quando habilitada)
+
+| Propriedade | Valor |
+|-------------|-------|
+| Cor | `#e5e7eb` (Tailwind gray-200) |
+| Espessura | 1px |
+| Estilo | solid |
+| Raio | 8px (rounded-lg) |
+
+## Relacionamentos
+
+```text
+WhatsAppAppearanceConfig (Singleton)
+    ↓ aplica-se a
+WhatsAppPageRecord[] (todas as páginas /w/[slug])
+```
+
+## API Endpoints
+
+### GET /api/whatsapp/appearance
+
+Retorna a configuração atual ou valores padrão.
+
+**Response 200:**
+```json
+{
+  "redirectText": "Redirecionando...",
+  "backgroundColor": null,
+  "borderEnabled": false,
+  "updatedAt": "2026-01-04T12:00:00.000Z"
+}
+```
+
+### PUT /api/whatsapp/appearance
+
+Atualiza a configuração de aparência.
+
+**Request Body:**
+```json
+{
+  "redirectText": "Aguarde um momento...",
+  "backgroundColor": "#f0fdf4",
+  "borderEnabled": true
+}
+```
+
+**Response 200:**
+```json
+{
+  "redirectText": "Aguarde um momento...",
+  "backgroundColor": "#f0fdf4",
+  "borderEnabled": true,
+  "updatedAt": "2026-01-04T12:30:00.000Z"
+}
+```
+
+## Notas de Implementação (Personalização WhatsApp)
+
+- Criar arquivo `lib/repos/whatsapp-appearance.ts` seguindo padrão existente
+- Adicionar schema Zod em `lib/validation.ts`
+- Server component `/w/[slug]/page.tsx` carrega config junto com dados da página
+- Client component aplica estilos inline para cor dinâmica
+- Fallback para valores padrão se Edge Config não tiver a chave

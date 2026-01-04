@@ -147,3 +147,18 @@ export const deleteWhatsAppPageSchema = z.object({
 });
 
 export type DeleteWhatsAppPageInput = z.infer<typeof deleteWhatsAppPageSchema>;
+
+// WhatsApp Appearance Config - Global styling for /w/[slug] pages
+// Added 2026-01-04 for feature 009-whatsapp-appearance
+export const whatsAppAppearanceSchema = z.object({
+  redirectText: z.string()
+    .min(1, "Texto é obrigatório")
+    .max(100, "Texto muito longo (máx. 100 caracteres)"),
+  backgroundColor: z.string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Cor deve estar em formato hexadecimal (#RRGGBB)")
+    .optional()
+    .or(z.literal("")),
+  borderEnabled: z.boolean().default(false),
+});
+
+export type WhatsAppAppearanceInput = z.infer<typeof whatsAppAppearanceSchema>;
