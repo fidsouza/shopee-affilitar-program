@@ -11,6 +11,7 @@ import type { WhatsAppPageRecord } from "@/lib/repos/whatsapp-pages";
 import type { WhatsAppAppearanceRecord } from "@/lib/repos/whatsapp-appearance";
 import type { BenefitCard, EmojiSize } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 // Appearance form state type
@@ -449,66 +450,75 @@ export default function WhatsAppAdminPage() {
       </div>
 
       <form className="space-y-4 rounded-lg border bg-card p-4 shadow-sm" onSubmit={handleSubmit}>
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Headline *</label>
-          <input
-            required
-            value={form.headline}
-            onChange={(e) => setForm((prev) => ({ ...prev, headline: e.target.value }))}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            placeholder="Ex: Entre no Grupo VIP de Ofertas!"
-            maxLength={200}
-          />
-        </div>
+        {/* Aba Geral - contém os 5 campos principais */}
+        <Tabs defaultValue="geral" className="w-full">
+          <TabsList>
+            <TabsTrigger value="geral">Geral</TabsTrigger>
+          </TabsList>
+          <TabsContent value="geral" className="space-y-4 mt-4">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Headline *</label>
+              <input
+                required
+                value={form.headline}
+                onChange={(e) => setForm((prev) => ({ ...prev, headline: e.target.value }))}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Ex: Entre no Grupo VIP de Ofertas!"
+                maxLength={200}
+              />
+            </div>
 
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">URL da Foto do Header (opcional)</label>
-          <input
-            value={form.headerImageUrl}
-            onChange={(e) => setForm((prev) => ({ ...prev, headerImageUrl: e.target.value }))}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            placeholder="https://exemplo.com/foto.jpg"
-            type="url"
-          />
-          <p className="text-xs text-muted-foreground">Foto circular exibida no topo da página (HTTPS obrigatório)</p>
-        </div>
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">URL da Foto do Header (opcional)</label>
+              <input
+                value={form.headerImageUrl}
+                onChange={(e) => setForm((prev) => ({ ...prev, headerImageUrl: e.target.value }))}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                placeholder="https://exemplo.com/foto.jpg"
+                type="url"
+              />
+              <p className="text-xs text-muted-foreground">Foto circular exibida no topo da página (HTTPS obrigatório)</p>
+            </div>
 
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Provas Sociais (uma por linha)</label>
-          <textarea
-            value={socialProofsText}
-            onChange={(e) => setSocialProofsText(e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            placeholder={"+5.000 membros\n⭐ 4.9 de avaliação\n🔥 Ofertas exclusivas diárias"}
-            rows={3}
-          />
-        </div>
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Provas Sociais (uma por linha)</label>
+              <textarea
+                value={socialProofsText}
+                onChange={(e) => setSocialProofsText(e.target.value)}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                placeholder={"+5.000 membros\n⭐ 4.9 de avaliação\n🔥 Ofertas exclusivas diárias"}
+                rows={3}
+              />
+            </div>
 
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Texto do Botão *</label>
-          <input
-            required
-            value={form.buttonText}
-            onChange={(e) => setForm((prev) => ({ ...prev, buttonText: e.target.value }))}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            placeholder="Ex: Entrar no Grupo VIP"
-            maxLength={100}
-          />
-        </div>
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Texto do Botão *</label>
+              <input
+                required
+                value={form.buttonText}
+                onChange={(e) => setForm((prev) => ({ ...prev, buttonText: e.target.value }))}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Ex: Entrar no Grupo VIP"
+                maxLength={100}
+              />
+            </div>
 
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">URL do WhatsApp *</label>
-          <input
-            required
-            value={form.whatsappUrl}
-            onChange={(e) => setForm((prev) => ({ ...prev, whatsappUrl: e.target.value }))}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            placeholder="https://chat.whatsapp.com/ABC123..."
-            type="url"
-          />
-          <p className="text-xs text-muted-foreground">Aceita: chat.whatsapp.com ou wa.me</p>
-        </div>
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">URL do WhatsApp *</label>
+              <input
+                required
+                value={form.whatsappUrl}
+                onChange={(e) => setForm((prev) => ({ ...prev, whatsappUrl: e.target.value }))}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                placeholder="https://chat.whatsapp.com/ABC123..."
+                type="url"
+              />
+              <p className="text-xs text-muted-foreground">Aceita: chat.whatsapp.com ou wa.me</p>
+            </div>
+          </TabsContent>
+        </Tabs>
 
+        {/* Seções restantes - fora das abas */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
             <label className="text-sm font-medium">Pixel (opcional)</label>
