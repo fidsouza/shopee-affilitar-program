@@ -454,6 +454,8 @@ export default function WhatsAppAdminPage() {
         <Tabs defaultValue="geral" className="w-full">
           <TabsList>
             <TabsTrigger value="geral">Geral</TabsTrigger>
+            <TabsTrigger value="gatilhos">Gatilhos</TabsTrigger>
+            <TabsTrigger value="pixel">Pixel</TabsTrigger>
           </TabsList>
           <TabsContent value="geral" className="space-y-4 mt-4">
             <div className="grid gap-2">
@@ -516,305 +518,309 @@ export default function WhatsAppAdminPage() {
               <p className="text-xs text-muted-foreground">Aceita: chat.whatsapp.com ou wa.me</p>
             </div>
           </TabsContent>
+
+          {/* Aba Gatilhos - Benefit Cards e Social Proof */}
+          <TabsContent value="gatilhos" className="space-y-4 mt-4">
+            {/* Benefit Cards Section */}
+            <div className="grid gap-4 rounded-md border bg-accent/30 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium">Benefit Cards (opcional)</label>
+                  <p className="text-xs text-muted-foreground">
+                    Cards com beneficios exibidos antes do botao (max. 8)
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground">Tamanho emoji:</label>
+                  <select
+                    value={form.emojiSize}
+                    onChange={(e) => setForm((prev) => ({ ...prev, emojiSize: e.target.value as EmojiSize }))}
+                    className="rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {EMOJI_SIZE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Existing Cards List */}
+              {form.benefitCards.length > 0 && (
+                <div className="space-y-2">
+                  {form.benefitCards.map((card, idx) => (
+                    <div key={idx} className="flex items-start gap-2 rounded-md border bg-background p-3">
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => {
+                            const newCards = [...form.benefitCards];
+                            [newCards[idx - 1], newCards[idx]] = [newCards[idx], newCards[idx - 1]];
+                            setForm((prev) => ({ ...prev, benefitCards: newCards }));
+                          }}
+                          className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === form.benefitCards.length - 1}
+                          onClick={() => {
+                            const newCards = [...form.benefitCards];
+                            [newCards[idx], newCards[idx + 1]] = [newCards[idx + 1], newCards[idx]];
+                            setForm((prev) => ({ ...prev, benefitCards: newCards }));
+                          }}
+                          className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
+                        >
+                          ↓
+                        </button>
+                      </div>
+                      <span className={cn("flex-shrink-0", EMOJI_SIZE_CLASSES[form.emojiSize])}>
+                        {card.emoji}
+                      </span>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <input
+                          value={card.emoji}
+                          onChange={(e) => {
+                            const newCards = [...form.benefitCards];
+                            newCards[idx] = { ...newCards[idx], emoji: e.target.value.slice(0, 2) };
+                            setForm((prev) => ({ ...prev, benefitCards: newCards }));
+                          }}
+                          placeholder="Emoji"
+                          maxLength={2}
+                          className="w-16 rounded border bg-background px-2 py-1 text-sm"
+                        />
+                        <input
+                          value={card.title}
+                          onChange={(e) => {
+                            const newCards = [...form.benefitCards];
+                            newCards[idx] = { ...newCards[idx], title: e.target.value };
+                            setForm((prev) => ({ ...prev, benefitCards: newCards }));
+                          }}
+                          placeholder="Titulo (obrigatorio)"
+                          maxLength={50}
+                          className="w-full rounded border bg-background px-2 py-1 text-sm"
+                        />
+                        <input
+                          value={card.description || ""}
+                          onChange={(e) => {
+                            const newCards = [...form.benefitCards];
+                            newCards[idx] = { ...newCards[idx], description: e.target.value || undefined };
+                            setForm((prev) => ({ ...prev, benefitCards: newCards }));
+                          }}
+                          placeholder="Descricao (opcional)"
+                          maxLength={150}
+                          className="w-full rounded border bg-background px-2 py-1 text-sm"
+                        />
+                        {(!card.emoji || !card.title) && (
+                          <p className="text-xs text-destructive">Emoji e titulo sao obrigatorios</p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForm((prev) => ({
+                            ...prev,
+                            benefitCards: prev.benefitCards.filter((_, i) => i !== idx),
+                          }));
+                        }}
+                        className="text-destructive hover:text-destructive/80 text-sm px-2"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add New Card Button */}
+              {form.benefitCards.length < 8 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setForm((prev) => ({
+                      ...prev,
+                      benefitCards: [
+                        ...prev.benefitCards,
+                        { emoji: "", title: "", description: undefined },
+                      ],
+                    }));
+                  }}
+                >
+                  + Adicionar Benefit Card
+                </Button>
+              )}
+              {form.benefitCards.length >= 8 && (
+                <p className="text-xs text-muted-foreground">Limite de 8 cards atingido</p>
+              )}
+
+              {/* Preview Section */}
+              {form.benefitCards.length > 0 && form.benefitCards.some(c => c.emoji && c.title) && (
+                <div className="mt-2">
+                  <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {form.benefitCards
+                      .filter(c => c.emoji && c.title)
+                      .map((card, idx) => (
+                        <div key={idx} className="rounded-lg border bg-white p-3 text-center">
+                          <span className={EMOJI_SIZE_CLASSES[form.emojiSize]}>{card.emoji}</span>
+                          <h4 className="font-bold text-sm mt-1">{card.title}</h4>
+                          {card.description && (
+                            <p className="text-xs text-muted-foreground mt-1">{card.description}</p>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Social Proof Notifications Section */}
+            <div className="grid gap-4 rounded-md border bg-accent/30 p-4">
+              <div>
+                <label className="text-sm font-medium">Notificações de Prova Social</label>
+                <p className="text-xs text-muted-foreground">
+                  Exibe notificações como &quot;Priscila de São Paulo acabou de entrar no grupo!&quot;
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.socialProofEnabled}
+                    onChange={(e) => setForm((prev) => ({ ...prev, socialProofEnabled: e.target.checked }))}
+                    className="rounded border-gray-300 h-4 w-4"
+                  />
+                  <span className="text-sm">Habilitar notificações</span>
+                </label>
+              </div>
+
+              {form.socialProofEnabled && (
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Intervalo entre notificações (segundos)</label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={60}
+                    value={form.socialProofInterval}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 10;
+                      setForm((prev) => ({ ...prev, socialProofInterval: Math.min(60, Math.max(5, val)) }));
+                    }}
+                    className="w-32 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <p className="text-xs text-muted-foreground">Mínimo: 5s | Máximo: 60s | Padrão: 10s</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Aba Pixel - Configurações de rastreamento */}
+          <TabsContent value="pixel" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Pixel (opcional)</label>
+                <select
+                  value={form.pixelConfigId}
+                  onChange={(e) => setForm((prev) => ({ ...prev, pixelConfigId: e.target.value }))}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="">Sem tracking</option>
+                  {pixels.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label} {p.isDefault ? "(padrão)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Evento de Redirect *</label>
+                <select
+                  required
+                  value={form.redirectEvent}
+                  onChange={(e) => setForm((prev) => ({ ...prev, redirectEvent: e.target.value as MetaEvent }))}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {META_STANDARD_EVENTS.map((event) => (
+                    <option key={event} value={event}>
+                      {event}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">Disparado antes do redirect (clique ou automático)</p>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Eventos ao Carregar * (mín. 1)</label>
+              <div className="flex flex-wrap gap-3 rounded-md border bg-background p-3">
+                {META_STANDARD_EVENTS.map((event) => (
+                  <label key={event} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.events.includes(event)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setForm((prev) => ({ ...prev, events: [...prev.events, event] }));
+                        } else {
+                          setForm((prev) => ({
+                            ...prev,
+                            events: prev.events.filter((ev) => ev !== event),
+                          }));
+                        }
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                    {event}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">Eventos disparados ao carregar a página</p>
+              {form.events.length === 0 && (
+                <p className="text-xs text-destructive">Selecione pelo menos 1 evento</p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Tempo de Redirect (segundos)</label>
+              <input
+                type="number"
+                min={1}
+                max={30}
+                value={form.redirectDelay}
+                onChange={(e) => setForm((prev) => ({ ...prev, redirectDelay: parseInt(e.target.value) || 5 }))}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring sm:w-32"
+              />
+            </div>
+          </TabsContent>
         </Tabs>
 
-        {/* Seções restantes - fora das abas */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Pixel (opcional)</label>
-            <select
-              value={form.pixelConfigId}
-              onChange={(e) => setForm((prev) => ({ ...prev, pixelConfigId: e.target.value }))}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="">Sem tracking</option>
-              {pixels.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label} {p.isDefault ? "(padrão)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Evento de Redirect *</label>
-            <select
-              required
-              value={form.redirectEvent}
-              onChange={(e) => setForm((prev) => ({ ...prev, redirectEvent: e.target.value as MetaEvent }))}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            >
-              {META_STANDARD_EVENTS.map((event) => (
-                <option key={event} value={event}>
-                  {event}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-muted-foreground">Disparado antes do redirect (clique ou automático)</p>
-          </div>
-        </div>
-
+        {/* Status - fora das abas */}
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Eventos ao Carregar * (mín. 1)</label>
-          <div className="flex flex-wrap gap-3 rounded-md border bg-background p-3">
-            {META_STANDARD_EVENTS.map((event) => (
-              <label key={event} className="flex items-center gap-2 text-sm cursor-pointer">
+          <label className="text-sm font-medium">Status</label>
+          <div className="flex gap-4 pt-2">
+            {(["active", "inactive"] as const).map((status) => (
+              <label key={status} className="flex items-center gap-2 text-sm">
                 <input
-                  type="checkbox"
-                  checked={form.events.includes(event)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setForm((prev) => ({ ...prev, events: [...prev.events, event] }));
-                    } else {
-                      setForm((prev) => ({
-                        ...prev,
-                        events: prev.events.filter((ev) => ev !== event),
-                      }));
-                    }
-                  }}
-                  className="rounded border-gray-300"
+                  type="radio"
+                  name="status"
+                  value={status}
+                  checked={form.status === status}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      status: e.target.value as FormState["status"],
+                    }))
+                  }
                 />
-                {event}
+                {status === "active" ? "Ativo" : "Inativo"}
               </label>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">Eventos disparados ao carregar a página</p>
-          {form.events.length === 0 && (
-            <p className="text-xs text-destructive">Selecione pelo menos 1 evento</p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Tempo de Redirect (segundos)</label>
-            <input
-              type="number"
-              min={1}
-              max={30}
-              value={form.redirectDelay}
-              onChange={(e) => setForm((prev) => ({ ...prev, redirectDelay: parseInt(e.target.value) || 5 }))}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Status</label>
-            <div className="flex gap-4 pt-2">
-              {(["active", "inactive"] as const).map((status) => (
-                <label key={status} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name="status"
-                    value={status}
-                    checked={form.status === status}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        status: e.target.value as FormState["status"],
-                      }))
-                    }
-                  />
-                  {status === "active" ? "Ativo" : "Inativo"}
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Benefit Cards Section */}
-        <div className="grid gap-4 rounded-md border bg-accent/30 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="text-sm font-medium">Benefit Cards (opcional)</label>
-              <p className="text-xs text-muted-foreground">
-                Cards com beneficios exibidos antes do botao (max. 8)
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-muted-foreground">Tamanho emoji:</label>
-              <select
-                value={form.emojiSize}
-                onChange={(e) => setForm((prev) => ({ ...prev, emojiSize: e.target.value as EmojiSize }))}
-                className="rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
-              >
-                {EMOJI_SIZE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Existing Cards List */}
-          {form.benefitCards.length > 0 && (
-            <div className="space-y-2">
-              {form.benefitCards.map((card, idx) => (
-                <div key={idx} className="flex items-start gap-2 rounded-md border bg-background p-3">
-                  <div className="flex flex-col gap-1">
-                    <button
-                      type="button"
-                      disabled={idx === 0}
-                      onClick={() => {
-                        const newCards = [...form.benefitCards];
-                        [newCards[idx - 1], newCards[idx]] = [newCards[idx], newCards[idx - 1]];
-                        setForm((prev) => ({ ...prev, benefitCards: newCards }));
-                      }}
-                      className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      disabled={idx === form.benefitCards.length - 1}
-                      onClick={() => {
-                        const newCards = [...form.benefitCards];
-                        [newCards[idx], newCards[idx + 1]] = [newCards[idx + 1], newCards[idx]];
-                        setForm((prev) => ({ ...prev, benefitCards: newCards }));
-                      }}
-                      className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
-                    >
-                      ↓
-                    </button>
-                  </div>
-                  <span className={cn("flex-shrink-0", EMOJI_SIZE_CLASSES[form.emojiSize])}>
-                    {card.emoji}
-                  </span>
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <input
-                      value={card.emoji}
-                      onChange={(e) => {
-                        const newCards = [...form.benefitCards];
-                        newCards[idx] = { ...newCards[idx], emoji: e.target.value.slice(0, 2) };
-                        setForm((prev) => ({ ...prev, benefitCards: newCards }));
-                      }}
-                      placeholder="Emoji"
-                      maxLength={2}
-                      className="w-16 rounded border bg-background px-2 py-1 text-sm"
-                    />
-                    <input
-                      value={card.title}
-                      onChange={(e) => {
-                        const newCards = [...form.benefitCards];
-                        newCards[idx] = { ...newCards[idx], title: e.target.value };
-                        setForm((prev) => ({ ...prev, benefitCards: newCards }));
-                      }}
-                      placeholder="Titulo (obrigatorio)"
-                      maxLength={50}
-                      className="w-full rounded border bg-background px-2 py-1 text-sm"
-                    />
-                    <input
-                      value={card.description || ""}
-                      onChange={(e) => {
-                        const newCards = [...form.benefitCards];
-                        newCards[idx] = { ...newCards[idx], description: e.target.value || undefined };
-                        setForm((prev) => ({ ...prev, benefitCards: newCards }));
-                      }}
-                      placeholder="Descricao (opcional)"
-                      maxLength={150}
-                      className="w-full rounded border bg-background px-2 py-1 text-sm"
-                    />
-                    {(!card.emoji || !card.title) && (
-                      <p className="text-xs text-destructive">Emoji e titulo sao obrigatorios</p>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setForm((prev) => ({
-                        ...prev,
-                        benefitCards: prev.benefitCards.filter((_, i) => i !== idx),
-                      }));
-                    }}
-                    className="text-destructive hover:text-destructive/80 text-sm px-2"
-                  >
-                    Remover
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Add New Card Button */}
-          {form.benefitCards.length < 8 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setForm((prev) => ({
-                  ...prev,
-                  benefitCards: [
-                    ...prev.benefitCards,
-                    { emoji: "", title: "", description: undefined },
-                  ],
-                }));
-              }}
-            >
-              + Adicionar Benefit Card
-            </Button>
-          )}
-          {form.benefitCards.length >= 8 && (
-            <p className="text-xs text-muted-foreground">Limite de 8 cards atingido</p>
-          )}
-
-          {/* Preview Section */}
-          {form.benefitCards.length > 0 && form.benefitCards.some(c => c.emoji && c.title) && (
-            <div className="mt-2">
-              <p className="text-xs text-muted-foreground mb-2">Preview:</p>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {form.benefitCards
-                  .filter(c => c.emoji && c.title)
-                  .map((card, idx) => (
-                    <div key={idx} className="rounded-lg border bg-white p-3 text-center">
-                      <span className={EMOJI_SIZE_CLASSES[form.emojiSize]}>{card.emoji}</span>
-                      <h4 className="font-bold text-sm mt-1">{card.title}</h4>
-                      {card.description && (
-                        <p className="text-xs text-muted-foreground mt-1">{card.description}</p>
-                      )}
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Social Proof Notifications Section */}
-        <div className="grid gap-4 rounded-md border bg-accent/30 p-4">
-          <div>
-            <label className="text-sm font-medium">Notificações de Prova Social</label>
-            <p className="text-xs text-muted-foreground">
-              Exibe notificações como &quot;Priscila de São Paulo acabou de entrar no grupo!&quot;
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.socialProofEnabled}
-                onChange={(e) => setForm((prev) => ({ ...prev, socialProofEnabled: e.target.checked }))}
-                className="rounded border-gray-300 h-4 w-4"
-              />
-              <span className="text-sm">Habilitar notificações</span>
-            </label>
-          </div>
-
-          {form.socialProofEnabled && (
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Intervalo entre notificações (segundos)</label>
-              <input
-                type="number"
-                min={5}
-                max={60}
-                value={form.socialProofInterval}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value) || 10;
-                  setForm((prev) => ({ ...prev, socialProofInterval: Math.min(60, Math.max(5, val)) }));
-                }}
-                className="w-32 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
-              <p className="text-xs text-muted-foreground">Mínimo: 5s | Máximo: 60s | Padrão: 10s</p>
-            </div>
-          )}
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
