@@ -37,6 +37,7 @@ const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
 // Updated 2026-01-01: Benefit cards support (benefitCards[] + emojiSize)
 // Updated 2026-01-03: Social proof notifications (socialProofEnabled + socialProofInterval)
 // Updated 2026-01-06: Redirect toggle (redirectEnabled + buttonEvent)
+// Updated 2026-01-06: Vacancy counter (vacancyCounterEnabled + vacancyHeadline + vacancyCount + vacancyFooter + vacancyBackgroundColor + vacancyCountFontSize + vacancyHeadlineFontSize + vacancyFooterFontSize + vacancyDecrementInterval + vacancyHeadlineColor + vacancyCountColor + vacancyFooterColor)
 type FormState = {
   id?: string;
   headline: string;
@@ -55,6 +56,20 @@ type FormState = {
   socialProofInterval: number;
   redirectEnabled: boolean;
   buttonEvent: MetaEvent | "";
+  // Vacancy Counter - added 2026-01-06
+  vacancyCounterEnabled: boolean;
+  vacancyHeadline: string;
+  vacancyCount: number;
+  vacancyFooter: string;
+  vacancyBackgroundColor: string;
+  vacancyCountFontSize: EmojiSize;
+  vacancyHeadlineFontSize: EmojiSize;
+  vacancyFooterFontSize: EmojiSize;
+  // Dynamic vacancy counter - added 2026-01-06
+  vacancyDecrementInterval: number;
+  vacancyHeadlineColor: string;
+  vacancyCountColor: string;
+  vacancyFooterColor: string;
 };
 
 const initialForm: FormState = {
@@ -75,6 +90,20 @@ const initialForm: FormState = {
   // Updated 2026-01-06: Redirect toggle defaults
   redirectEnabled: true,
   buttonEvent: "",
+  // Updated 2026-01-06: Vacancy counter defaults
+  vacancyCounterEnabled: false,
+  vacancyHeadline: "",
+  vacancyCount: 0,
+  vacancyFooter: "",
+  vacancyBackgroundColor: "",
+  vacancyCountFontSize: "large",
+  vacancyHeadlineFontSize: "medium",
+  vacancyFooterFontSize: "small",
+  // Dynamic vacancy counter defaults
+  vacancyDecrementInterval: 10,
+  vacancyHeadlineColor: "",
+  vacancyCountColor: "",
+  vacancyFooterColor: "",
 };
 
 export default function WhatsAppAdminPage() {
@@ -184,6 +213,20 @@ export default function WhatsAppAdminPage() {
         // Updated 2026-01-06: Redirect toggle
         redirectEnabled: form.redirectEnabled,
         buttonEvent: form.buttonEvent || undefined,
+        // Updated 2026-01-06: Vacancy counter
+        vacancyCounterEnabled: form.vacancyCounterEnabled,
+        vacancyHeadline: form.vacancyHeadline,
+        vacancyCount: form.vacancyCount,
+        vacancyFooter: form.vacancyFooter || undefined,
+        vacancyBackgroundColor: form.vacancyBackgroundColor || undefined,
+        vacancyCountFontSize: form.vacancyCountFontSize,
+        vacancyHeadlineFontSize: form.vacancyHeadlineFontSize,
+        vacancyFooterFontSize: form.vacancyFooterFontSize,
+        // Dynamic vacancy counter
+        vacancyDecrementInterval: form.vacancyDecrementInterval,
+        vacancyHeadlineColor: form.vacancyHeadlineColor || undefined,
+        vacancyCountColor: form.vacancyCountColor || undefined,
+        vacancyFooterColor: form.vacancyFooterColor || undefined,
       };
 
       const res = await fetch("/api/whatsapp", {
@@ -240,6 +283,20 @@ export default function WhatsAppAdminPage() {
       // Updated 2026-01-06: Redirect toggle
       redirectEnabled: page.redirectEnabled ?? true,
       buttonEvent: page.buttonEvent ?? "",
+      // Updated 2026-01-06: Vacancy counter
+      vacancyCounterEnabled: page.vacancyCounterEnabled ?? false,
+      vacancyHeadline: page.vacancyHeadline ?? "",
+      vacancyCount: page.vacancyCount ?? 0,
+      vacancyFooter: page.vacancyFooter ?? "",
+      vacancyBackgroundColor: page.vacancyBackgroundColor ?? "",
+      vacancyCountFontSize: page.vacancyCountFontSize ?? "large",
+      vacancyHeadlineFontSize: page.vacancyHeadlineFontSize ?? "medium",
+      vacancyFooterFontSize: page.vacancyFooterFontSize ?? "small",
+      // Dynamic vacancy counter
+      vacancyDecrementInterval: page.vacancyDecrementInterval ?? 10,
+      vacancyHeadlineColor: page.vacancyHeadlineColor ?? "",
+      vacancyCountColor: page.vacancyCountColor ?? "",
+      vacancyFooterColor: page.vacancyFooterColor ?? "",
     });
     setSocialProofsText(page.socialProofs.join("\n"));
     setEditingId(page.id);
@@ -728,6 +785,270 @@ export default function WhatsAppAdminPage() {
                 </div>
               )}
             </div>
+
+            {/* Vacancy Counter Section - added 2026-01-06 */}
+            <div className="grid gap-4 rounded-md bg-accent/30 p-4">
+              <div>
+                <label className="text-sm font-medium">Contador de Vagas</label>
+                <p className="text-xs text-muted-foreground">
+                  Exibe um contador de vagas restantes para criar urgência
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className={cn(
+                  "flex items-center gap-2 cursor-pointer",
+                  form.redirectEnabled && "opacity-50 cursor-not-allowed"
+                )}>
+                  <input
+                    type="checkbox"
+                    checked={form.vacancyCounterEnabled}
+                    onChange={(e) => setForm((prev) => ({ ...prev, vacancyCounterEnabled: e.target.checked }))}
+                    disabled={form.redirectEnabled}
+                    className="rounded border-gray-300 h-4 w-4"
+                  />
+                  <span className="text-sm">Habilitar contador de vagas</span>
+                </label>
+              </div>
+              {form.redirectEnabled && (
+                <p className="text-xs text-amber-600">
+                  Desabilite o redirect automático para usar o contador de vagas
+                </p>
+              )}
+
+              {form.vacancyCounterEnabled && (
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Headline do Contador *</label>
+                    <input
+                      value={form.vacancyHeadline}
+                      onChange={(e) => setForm((prev) => ({ ...prev, vacancyHeadline: e.target.value }))}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Ex: VAGAS DISPONÍVEIS"
+                      maxLength={100}
+                    />
+                    {!form.vacancyHeadline && (
+                      <p className="text-xs text-destructive">Headline é obrigatória quando o contador está habilitado</p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">Número de Vagas *</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.vacancyCount}
+                        onChange={(e) => setForm((prev) => ({ ...prev, vacancyCount: Math.max(0, parseInt(e.target.value) || 0) }))}
+                        className="w-32 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <p className="text-xs text-muted-foreground">Valor inicial do contador (diminui até zero)</p>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">Intervalo de Decremento (segundos)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={60}
+                        value={form.vacancyDecrementInterval}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 10;
+                          setForm((prev) => ({ ...prev, vacancyDecrementInterval: Math.min(60, Math.max(1, val)) }));
+                        }}
+                        className="w-32 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <p className="text-xs text-muted-foreground">Mínimo: 1s | Máximo: 60s | Padrão: 10s</p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Footer (opcional)</label>
+                    <input
+                      value={form.vacancyFooter}
+                      onChange={(e) => setForm((prev) => ({ ...prev, vacancyFooter: e.target.value }))}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Ex: Garanta sua vaga agora!"
+                      maxLength={200}
+                    />
+                    <p className="text-xs text-muted-foreground">Texto exibido abaixo do número (máx. 200 caracteres)</p>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Cor de Fundo (opcional)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="color"
+                        value={form.vacancyBackgroundColor || "#ffffff"}
+                        onChange={(e) => setForm((prev) => ({ ...prev, vacancyBackgroundColor: e.target.value }))}
+                        className="h-10 w-14 cursor-pointer rounded border"
+                      />
+                      <input
+                        value={form.vacancyBackgroundColor}
+                        onChange={(e) => setForm((prev) => ({ ...prev, vacancyBackgroundColor: e.target.value }))}
+                        className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        placeholder="#RRGGBB"
+                        maxLength={7}
+                      />
+                      {form.vacancyBackgroundColor && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setForm((prev) => ({ ...prev, vacancyBackgroundColor: "" }))}
+                        >
+                          Limpar
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Formato hexadecimal (#RRGGBB) ou deixe vazio para transparente</p>
+                  </div>
+
+                  {/* Cores de Texto */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">Cor Headline</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={form.vacancyHeadlineColor || "#374151"}
+                          onChange={(e) => setForm((prev) => ({ ...prev, vacancyHeadlineColor: e.target.value }))}
+                          className="h-10 w-14 cursor-pointer rounded border"
+                        />
+                        <input
+                          value={form.vacancyHeadlineColor}
+                          onChange={(e) => setForm((prev) => ({ ...prev, vacancyHeadlineColor: e.target.value }))}
+                          className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                          placeholder="#374151"
+                          maxLength={7}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">Cor Número</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={form.vacancyCountColor || "#16a34a"}
+                          onChange={(e) => setForm((prev) => ({ ...prev, vacancyCountColor: e.target.value }))}
+                          className="h-10 w-14 cursor-pointer rounded border"
+                        />
+                        <input
+                          value={form.vacancyCountColor}
+                          onChange={(e) => setForm((prev) => ({ ...prev, vacancyCountColor: e.target.value }))}
+                          className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                          placeholder="#16a34a"
+                          maxLength={7}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">Cor Footer</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={form.vacancyFooterColor || "#4b5563"}
+                          onChange={(e) => setForm((prev) => ({ ...prev, vacancyFooterColor: e.target.value }))}
+                          className="h-10 w-14 cursor-pointer rounded border"
+                        />
+                        <input
+                          value={form.vacancyFooterColor}
+                          onChange={(e) => setForm((prev) => ({ ...prev, vacancyFooterColor: e.target.value }))}
+                          className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                          placeholder="#4b5563"
+                          maxLength={7}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">Tamanho Headline</label>
+                      <select
+                        value={form.vacancyHeadlineFontSize}
+                        onChange={(e) => setForm((prev) => ({ ...prev, vacancyHeadlineFontSize: e.target.value as EmojiSize }))}
+                        className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        {EMOJI_SIZE_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">Tamanho Número</label>
+                      <select
+                        value={form.vacancyCountFontSize}
+                        onChange={(e) => setForm((prev) => ({ ...prev, vacancyCountFontSize: e.target.value as EmojiSize }))}
+                        className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        {EMOJI_SIZE_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">Tamanho Footer</label>
+                      <select
+                        value={form.vacancyFooterFontSize}
+                        onChange={(e) => setForm((prev) => ({ ...prev, vacancyFooterFontSize: e.target.value as EmojiSize }))}
+                        className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        {EMOJI_SIZE_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Preview Section */}
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Preview</label>
+                    <div className="flex justify-center rounded-md border bg-zinc-100 p-6">
+                      <div
+                        className="flex flex-col items-center gap-2 rounded-lg border border-gray-200 px-6 py-4"
+                        style={{ backgroundColor: form.vacancyBackgroundColor || "transparent" }}
+                      >
+                        <span
+                          className={cn(
+                            form.vacancyHeadlineFontSize === "small" && "text-sm",
+                            form.vacancyHeadlineFontSize === "medium" && "text-base",
+                            form.vacancyHeadlineFontSize === "large" && "text-xl",
+                            "font-medium"
+                          )}
+                          style={{ color: form.vacancyHeadlineColor || "#374151" }}
+                        >
+                          {form.vacancyHeadline || "VAGAS DISPONÍVEIS"}
+                        </span>
+                        <span
+                          className={cn(
+                            "font-bold",
+                            form.vacancyCountFontSize === "small" && "text-2xl",
+                            form.vacancyCountFontSize === "medium" && "text-4xl",
+                            form.vacancyCountFontSize === "large" && "text-6xl",
+                          )}
+                          style={{ color: form.vacancyCountColor || "#16a34a" }}
+                        >
+                          {form.vacancyCount}
+                        </span>
+                        {form.vacancyFooter && (
+                          <span
+                            className={cn(
+                              form.vacancyFooterFontSize === "small" && "text-xs",
+                              form.vacancyFooterFontSize === "medium" && "text-sm",
+                              form.vacancyFooterFontSize === "large" && "text-base",
+                            )}
+                            style={{ color: form.vacancyFooterColor || "#4b5563" }}
+                          >
+                            {form.vacancyFooter}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           {/* Aba Pixel - Configurações de rastreamento */}
@@ -818,6 +1139,7 @@ export default function WhatsAppAdminPage() {
             </div>
 
             {/* Updated 2026-01-06: Redirect Toggle and Delay */}
+            {/* Updated 2026-01-06: Mutual exclusivity with vacancy counter */}
             <div className="grid gap-4 rounded-md bg-accent/30 p-4">
               <div>
                 <label className="text-sm font-medium">Redirect Automático</label>
@@ -827,16 +1149,25 @@ export default function WhatsAppAdminPage() {
               </div>
 
               <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className={cn(
+                  "flex items-center gap-2 cursor-pointer",
+                  form.vacancyCounterEnabled && "opacity-50 cursor-not-allowed"
+                )}>
                   <input
                     type="checkbox"
                     checked={form.redirectEnabled}
                     onChange={(e) => setForm((prev) => ({ ...prev, redirectEnabled: e.target.checked }))}
+                    disabled={form.vacancyCounterEnabled}
                     className="rounded border-gray-300 h-4 w-4"
                   />
                   <span className="text-sm">{form.redirectEnabled ? "Habilitado" : "Desabilitado"}</span>
                 </label>
               </div>
+              {form.vacancyCounterEnabled && (
+                <p className="text-xs text-amber-600">
+                  Desabilite o contador de vagas para usar o redirect automático
+                </p>
+              )}
 
               {form.redirectEnabled && (
                 <div className="grid gap-2">
@@ -853,7 +1184,7 @@ export default function WhatsAppAdminPage() {
                 </div>
               )}
 
-              {!form.redirectEnabled && (
+              {!form.redirectEnabled && !form.vacancyCounterEnabled && (
                 <p className="text-xs text-muted-foreground italic">
                   Com redirect desabilitado, o usuário só será redirecionado ao clicar no botão.
                 </p>
@@ -959,6 +1290,11 @@ export default function WhatsAppAdminPage() {
                     {page.socialProofEnabled && (
                       <span className="rounded-full px-2 py-1 text-xs bg-blue-100 text-blue-800">
                         Prova Social
+                      </span>
+                    )}
+                    {page.vacancyCounterEnabled && (
+                      <span className="rounded-full px-2 py-1 text-xs bg-amber-100 text-amber-800">
+                        Contador
                       </span>
                     )}
                   </div>

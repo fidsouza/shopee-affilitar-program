@@ -17,7 +17,8 @@ import { logInfo, logError } from "@/lib/logging";
 // Updated 2026-01-01: Benefit cards support (benefitCards[] + emojiSize)
 // Updated 2026-01-03: Social proof notifications (socialProofEnabled + socialProofInterval)
 // Updated 2026-01-06: Redirect toggle (redirectEnabled + buttonEvent)
-export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'buttonEvent'> & {
+// Updated 2026-01-06: Vacancy counter (vacancyCounterEnabled + vacancyHeadline + vacancyCount + vacancyFooter + vacancyBackgroundColor + vacancyCountFontSize + vacancyHeadlineFontSize + vacancyFooterFontSize + vacancyDecrementInterval + vacancyHeadlineColor + vacancyCountColor + vacancyFooterColor)
+export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'buttonEvent' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor'> & {
   id: string;
   slug: string;
   headerImageUrl?: string;
@@ -28,12 +29,26 @@ export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pix
   socialProofInterval: number;
   redirectEnabled: boolean;
   buttonEvent?: MetaEvent;
+  // Vacancy Counter - added 2026-01-06
+  vacancyCounterEnabled: boolean;
+  vacancyHeadline: string;
+  vacancyCount: number;
+  vacancyFooter: string | null;
+  vacancyBackgroundColor: string | null;
+  vacancyCountFontSize: EmojiSize;
+  vacancyHeadlineFontSize: EmojiSize;
+  vacancyFooterFontSize: EmojiSize;
+  // Dynamic vacancy counter - added 2026-01-06
+  vacancyDecrementInterval: number;
+  vacancyHeadlineColor: string | null;
+  vacancyCountColor: string | null;
+  vacancyFooterColor: string | null;
   createdAt: string;
   updatedAt: string;
 };
 
 // Legacy type for migration from buttonEvent to events/redirectEvent and missing fields
-type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'redirectEnabled' | 'buttonEvent'> & {
+type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'redirectEnabled' | 'buttonEvent' | 'vacancyCounterEnabled' | 'vacancyHeadline' | 'vacancyCount' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyCountFontSize' | 'vacancyHeadlineFontSize' | 'vacancyFooterFontSize' | 'vacancyDecrementInterval' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor'> & {
   buttonEvent?: MetaEvent;
   events?: MetaEvent[];
   redirectEvent?: MetaEvent;
@@ -42,6 +57,20 @@ type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEve
   socialProofEnabled?: boolean;
   socialProofInterval?: number;
   redirectEnabled?: boolean;
+  // Vacancy Counter - optional for backward compatibility
+  vacancyCounterEnabled?: boolean;
+  vacancyHeadline?: string;
+  vacancyCount?: number;
+  vacancyFooter?: string | null;
+  vacancyBackgroundColor?: string | null;
+  vacancyCountFontSize?: EmojiSize;
+  vacancyHeadlineFontSize?: EmojiSize;
+  vacancyFooterFontSize?: EmojiSize;
+  // Dynamic vacancy counter - optional for backward compatibility
+  vacancyDecrementInterval?: number;
+  vacancyHeadlineColor?: string | null;
+  vacancyCountColor?: string | null;
+  vacancyFooterColor?: string | null;
 };
 
 // Migrate legacy record to new format (backward compatibility)
@@ -70,6 +99,22 @@ function migrateRecord(record: LegacyWhatsAppPageRecord): WhatsAppPageRecord {
   // Add default redirectEnabled and buttonEvent if missing (backward compatibility - 2026-01-06)
   migrated.redirectEnabled = record.redirectEnabled ?? true;
   migrated.buttonEvent = record.buttonEvent; // undefined = uses redirectEvent
+
+  // Add default vacancy counter fields if missing (backward compatibility - 2026-01-06)
+  migrated.vacancyCounterEnabled = record.vacancyCounterEnabled ?? false;
+  migrated.vacancyHeadline = record.vacancyHeadline ?? "";
+  migrated.vacancyCount = record.vacancyCount ?? 0;
+  migrated.vacancyFooter = record.vacancyFooter ?? null;
+  migrated.vacancyBackgroundColor = record.vacancyBackgroundColor ?? null;
+  migrated.vacancyCountFontSize = record.vacancyCountFontSize ?? "large";
+  migrated.vacancyHeadlineFontSize = record.vacancyHeadlineFontSize ?? "medium";
+  migrated.vacancyFooterFontSize = record.vacancyFooterFontSize ?? "small";
+
+  // Add default dynamic vacancy counter fields if missing (backward compatibility - 2026-01-06)
+  migrated.vacancyDecrementInterval = record.vacancyDecrementInterval ?? 10;
+  migrated.vacancyHeadlineColor = record.vacancyHeadlineColor ?? null;
+  migrated.vacancyCountColor = record.vacancyCountColor ?? null;
+  migrated.vacancyFooterColor = record.vacancyFooterColor ?? null;
 
   return migrated;
 }
@@ -185,6 +230,20 @@ export async function upsertWhatsAppPage(input: WhatsAppPageInput): Promise<What
     // Updated 2026-01-06: Redirect toggle
     redirectEnabled: parsed.redirectEnabled ?? existing?.redirectEnabled ?? true,
     buttonEvent: parsed.buttonEvent ?? existing?.buttonEvent,
+    // Updated 2026-01-06: Vacancy counter
+    vacancyCounterEnabled: parsed.vacancyCounterEnabled ?? existing?.vacancyCounterEnabled ?? false,
+    vacancyHeadline: parsed.vacancyHeadline ?? existing?.vacancyHeadline ?? "",
+    vacancyCount: parsed.vacancyCount ?? existing?.vacancyCount ?? 0,
+    vacancyFooter: parsed.vacancyFooter ?? existing?.vacancyFooter ?? null,
+    vacancyBackgroundColor: parsed.vacancyBackgroundColor ?? existing?.vacancyBackgroundColor ?? null,
+    vacancyCountFontSize: parsed.vacancyCountFontSize ?? existing?.vacancyCountFontSize ?? "large",
+    vacancyHeadlineFontSize: parsed.vacancyHeadlineFontSize ?? existing?.vacancyHeadlineFontSize ?? "medium",
+    vacancyFooterFontSize: parsed.vacancyFooterFontSize ?? existing?.vacancyFooterFontSize ?? "small",
+    // Dynamic vacancy counter
+    vacancyDecrementInterval: parsed.vacancyDecrementInterval ?? existing?.vacancyDecrementInterval ?? 10,
+    vacancyHeadlineColor: parsed.vacancyHeadlineColor ?? existing?.vacancyHeadlineColor ?? null,
+    vacancyCountColor: parsed.vacancyCountColor ?? existing?.vacancyCountColor ?? null,
+    vacancyFooterColor: parsed.vacancyFooterColor ?? existing?.vacancyFooterColor ?? null,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };

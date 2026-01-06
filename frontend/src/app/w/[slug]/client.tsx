@@ -13,6 +13,25 @@ const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
   large: "text-6xl",
 };
 
+// Vacancy counter font size classes - added 2026-01-06
+const VACANCY_HEADLINE_SIZE_CLASSES: Record<EmojiSize, string> = {
+  small: "text-sm",
+  medium: "text-base",
+  large: "text-xl",
+};
+
+const VACANCY_COUNT_SIZE_CLASSES: Record<EmojiSize, string> = {
+  small: "text-2xl",
+  medium: "text-4xl",
+  large: "text-6xl",
+};
+
+const VACANCY_FOOTER_SIZE_CLASSES: Record<EmojiSize, string> = {
+  small: "text-xs",
+  medium: "text-sm",
+  large: "text-base",
+};
+
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
 // Updated 2026-01-04: Global appearance configuration
 // Updated 2026-01-06: Separate button event support (buttonEvent + buttonEventId)
@@ -27,6 +46,7 @@ type Props = {
 
 export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId, buttonEventId, appearance }: Props) {
   const [countdown, setCountdown] = useState(page.redirectDelay);
+  const [vacancyCountDisplay, setVacancyCountDisplay] = useState(page.vacancyCount);
   const hasTrackedPageEvents = useRef(false);
   const hasTrackedRedirect = useRef(false);
   const hasTrackedButtonClick = useRef(false);
@@ -172,6 +192,25 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
     return () => clearInterval(timer);
   }, [handleAutoRedirect, page.redirectEnabled]);
 
+  // Vacancy counter decrement timer - added 2026-01-06
+  useEffect(() => {
+    // Skip if vacancy counter is disabled or already at zero
+    if (!page.vacancyCounterEnabled || vacancyCountDisplay <= 0) return;
+
+    const interval = (page.vacancyDecrementInterval ?? 10) * 1000;
+    const timer = setInterval(() => {
+      setVacancyCountDisplay((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [page.vacancyCounterEnabled, page.vacancyDecrementInterval, vacancyCountDisplay]);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white p-4">
       <div className="flex max-w-md flex-col items-center gap-6 text-center">
@@ -277,6 +316,37 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
           </div>
         )}
       </div>
+
+      {/* Vacancy Counter - Added 2026-01-06 - Dynamic decrement and custom colors */}
+      {page.vacancyCounterEnabled && (
+        <div className="mt-6">
+          <div
+            className="flex flex-col items-center gap-2 rounded-lg border border-gray-200 px-6 py-4 text-center"
+            style={{ backgroundColor: page.vacancyBackgroundColor || "transparent" }}
+          >
+            <span
+              className={`font-medium text-center ${VACANCY_HEADLINE_SIZE_CLASSES[page.vacancyHeadlineFontSize ?? "medium"]}`}
+              style={{ color: page.vacancyHeadlineColor || "#374151" }}
+            >
+              {page.vacancyHeadline}
+            </span>
+            <span
+              className={`font-bold text-center ${VACANCY_COUNT_SIZE_CLASSES[page.vacancyCountFontSize ?? "large"]}`}
+              style={{ color: page.vacancyCountColor || "#16a34a" }}
+            >
+              {vacancyCountDisplay}
+            </span>
+            {page.vacancyFooter && (
+              <span
+                className={`text-center ${VACANCY_FOOTER_SIZE_CLASSES[page.vacancyFooterFontSize ?? "small"]}`}
+                style={{ color: page.vacancyFooterColor || "#4b5563" }}
+              >
+                {page.vacancyFooter}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Benefit Cards Grid - Updated 2026-01-01 - Full width section below countdown */}
       {page.benefitCards && page.benefitCards.length > 0 && (
