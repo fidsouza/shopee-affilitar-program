@@ -138,6 +138,9 @@ export const whatsAppPageSchema = z.object({
     .min(5, "Intervalo mínimo: 5 segundos")
     .max(60, "Intervalo máximo: 60 segundos")
     .default(10),
+  // Redirect Toggle - added 2026-01-06 for feature 013-redirect-toggle
+  redirectEnabled: z.boolean().default(true),
+  buttonEvent: metaEventEnum.optional(),
 });
 
 export type WhatsAppPageInput = z.infer<typeof whatsAppPageSchema>;

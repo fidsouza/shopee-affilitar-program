@@ -44,8 +44,10 @@ export default async function WhatsAppRedirectPage({ params }: PageProps) {
   const appearance = await getWhatsAppAppearance();
 
   // Updated 2025-12-31: Multi-event support
+  // Updated 2026-01-06: Separate button event ID for deduplication
   const eventId = generateEventId();
   const redirectEventId = generateEventId(); // Separate ID for redirect event
+  const buttonEventId = generateEventId(); // Separate ID for button click event
   const hdrs = await headers();
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
   const host = hdrs.get("host") ?? process.env.NEXT_PUBLIC_BASE_URL ?? "";
@@ -91,6 +93,7 @@ export default async function WhatsAppRedirectPage({ params }: PageProps) {
       pixelId={pixel?.pixelId}
       eventId={eventId}
       redirectEventId={redirectEventId}
+      buttonEventId={buttonEventId}
       appearance={appearance}
     />
   );

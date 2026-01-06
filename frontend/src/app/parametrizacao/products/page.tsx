@@ -166,7 +166,7 @@ export default function ProductAdminPage() {
         </p>
       </div>
 
-      <form className="space-y-4 rounded-lg border bg-card p-4 shadow-sm" onSubmit={handleSubmit}>
+      <form className="space-y-4 rounded-lg bg-card p-4" onSubmit={handleSubmit}>
         <div className="grid gap-2">
           <label className="text-sm font-medium">Título</label>
           <input
@@ -262,7 +262,7 @@ export default function ProductAdminPage() {
         </Button>
       </form>
 
-      <div className="rounded-lg border bg-card p-4 shadow-sm">
+      <div className="rounded-lg border bg-card p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Produtos cadastrados</h2>
           <span className="text-xs text-muted-foreground">Total: {products.length}</span>
@@ -276,7 +276,7 @@ export default function ProductAdminPage() {
             {products.map((product) => (
               <li
                 key={product.id}
-                className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2 rounded-md px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="text-sm font-medium">{product.title}</p>

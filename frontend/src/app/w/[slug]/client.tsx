@@ -15,18 +15,21 @@ const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
 
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
 // Updated 2026-01-04: Global appearance configuration
+// Updated 2026-01-06: Separate button event support (buttonEvent + buttonEventId)
 type Props = {
   page: WhatsAppPageRecord;
   pixelId?: string;
   eventId: string;
   redirectEventId: string;
+  buttonEventId: string;
   appearance: WhatsAppAppearanceRecord;
 };
 
-export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId, appearance }: Props) {
+export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId, buttonEventId, appearance }: Props) {
   const [countdown, setCountdown] = useState(page.redirectDelay);
   const hasTrackedPageEvents = useRef(false);
   const hasTrackedRedirect = useRef(false);
+  const hasTrackedButtonClick = useRef(false);
   const fbqInitialized = useRef(false);
 
   // Initialize Meta Pixel SDK and fire page load events
@@ -81,7 +84,8 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
     }
   }, [pixelId, page.events, eventId]);
 
-  const handleRedirect = useCallback(async () => {
+  // Handle automatic redirect (fires redirectEvent)
+  const handleAutoRedirect = useCallback(async () => {
     // Deduplication: only fire redirect event once
     if (hasTrackedRedirect.current) return;
     hasTrackedRedirect.current = true;
@@ -113,13 +117,52 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
     }, 100);
   }, [pixelId, page.id, page.redirectEvent, page.whatsappUrl, redirectEventId]);
 
-  // Countdown timer
+  // Handle button click (fires buttonEvent or falls back to redirectEvent)
+  const handleButtonClick = useCallback(async () => {
+    // Deduplication: only fire button event once
+    if (hasTrackedButtonClick.current) return;
+    hasTrackedButtonClick.current = true;
+
+    // Determine which event to fire (buttonEvent or fallback to redirectEvent)
+    const eventToFire = page.buttonEvent ?? page.redirectEvent;
+
+    // Fire client-side button event if pixel exists
+    if (pixelId && typeof window !== "undefined") {
+      const w = window as Window & { fbq?: (...args: unknown[]) => void };
+      w.fbq?.("track", eventToFire, {}, { eventID: buttonEventId });
+    }
+
+    // Fire server-side button event via API (best effort)
+    try {
+      await fetch("/api/whatsapp/track-redirect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pageId: page.id,
+          eventName: eventToFire,
+          eventId: buttonEventId,
+        }),
+      });
+    } catch {
+      // Best-effort, don't block redirect
+    }
+
+    // Redirect to WhatsApp after short delay to ensure events fire
+    setTimeout(() => {
+      window.location.href = page.whatsappUrl;
+    }, 100);
+  }, [pixelId, page.id, page.buttonEvent, page.redirectEvent, page.whatsappUrl, buttonEventId]);
+
+  // Countdown timer - only runs if redirectEnabled is true
   useEffect(() => {
+    // Skip countdown if redirect is disabled
+    if (!page.redirectEnabled) return;
+
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleRedirect();
+          handleAutoRedirect();
           return 0;
         }
         return prev - 1;
@@ -127,7 +170,7 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [handleRedirect]);
+  }, [handleAutoRedirect, page.redirectEnabled]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white p-4">
@@ -163,11 +206,12 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
         )}
 
         {/* CTA Button - also works as direct link for noscript */}
+        {/* Updated 2026-01-06: Uses handleButtonClick for separate button event tracking */}
         <a
           href={page.whatsappUrl}
           onClick={(e) => {
             e.preventDefault();
-            handleRedirect();
+            handleButtonClick();
           }}
           className="inline-flex items-center gap-2 rounded-full bg-green-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:bg-green-600 hover:shadow-xl active:scale-95"
         >
@@ -184,49 +228,54 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
         </a>
 
         {/* Countdown - Updated 2026-01-04: Global appearance configuration */}
-        <div
-          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm ${
-            appearance.borderEnabled ? "border border-gray-200" : ""
-          }`}
-          style={{
-            backgroundColor: appearance.backgroundColor || "transparent",
-          }}
-        >
-          <svg
-            className="h-4 w-4 animate-spin text-gray-500"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-          <span className="text-gray-500">
-            {appearance.redirectText.replace("...", "")} em{" "}
-            <span className="font-bold text-green-600">{countdown}</span> segundos...
-          </span>
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-1 w-48 overflow-hidden rounded-full bg-gray-200">
+        {/* Updated 2026-01-06: Only show if redirectEnabled is true */}
+        {page.redirectEnabled && (
           <div
-            className="h-full bg-green-500 transition-all duration-1000 ease-linear"
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm ${
+              appearance.borderEnabled ? "border border-gray-200" : ""
+            }`}
             style={{
-              width: `${((page.redirectDelay - countdown) / page.redirectDelay) * 100}%`
+              backgroundColor: appearance.backgroundColor || "transparent",
             }}
-          />
-        </div>
+          >
+            <svg
+              className="h-4 w-4 animate-spin text-gray-500"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <span className="text-gray-500">
+              {appearance.redirectText.replace("...", "")} em{" "}
+              <span className="font-bold text-green-600">{countdown}</span> segundos...
+            </span>
+          </div>
+        )}
+
+        {/* Progress bar - Only show if redirectEnabled is true */}
+        {page.redirectEnabled && (
+          <div className="h-1 w-48 overflow-hidden rounded-full bg-gray-200">
+            <div
+              className="h-full bg-green-500 transition-all duration-1000 ease-linear"
+              style={{
+                width: `${((page.redirectDelay - countdown) / page.redirectDelay) * 100}%`
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Benefit Cards Grid - Updated 2026-01-01 - Full width section below countdown */}
