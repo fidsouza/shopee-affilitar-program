@@ -36,6 +36,7 @@ const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
 // Updated 2026-01-01: Benefit cards support (benefitCards[] + emojiSize)
 // Updated 2026-01-03: Social proof notifications (socialProofEnabled + socialProofInterval)
+// Updated 2026-01-06: Redirect toggle (redirectEnabled + buttonEvent)
 type FormState = {
   id?: string;
   headline: string;
@@ -52,6 +53,8 @@ type FormState = {
   emojiSize: EmojiSize;
   socialProofEnabled: boolean;
   socialProofInterval: number;
+  redirectEnabled: boolean;
+  buttonEvent: MetaEvent | "";
 };
 
 const initialForm: FormState = {
@@ -69,6 +72,9 @@ const initialForm: FormState = {
   emojiSize: "medium",
   socialProofEnabled: false,
   socialProofInterval: 10,
+  // Updated 2026-01-06: Redirect toggle defaults
+  redirectEnabled: true,
+  buttonEvent: "",
 };
 
 export default function WhatsAppAdminPage() {
@@ -175,6 +181,9 @@ export default function WhatsAppAdminPage() {
         // Updated 2026-01-03: Social proof notifications
         socialProofEnabled: form.socialProofEnabled,
         socialProofInterval: form.socialProofInterval,
+        // Updated 2026-01-06: Redirect toggle
+        redirectEnabled: form.redirectEnabled,
+        buttonEvent: form.buttonEvent || undefined,
       };
 
       const res = await fetch("/api/whatsapp", {
@@ -228,6 +237,9 @@ export default function WhatsAppAdminPage() {
       // Updated 2026-01-03: Social proof notifications
       socialProofEnabled: page.socialProofEnabled ?? false,
       socialProofInterval: page.socialProofInterval ?? 10,
+      // Updated 2026-01-06: Redirect toggle
+      redirectEnabled: page.redirectEnabled ?? true,
+      buttonEvent: page.buttonEvent ?? "",
     });
     setSocialProofsText(page.socialProofs.join("\n"));
     setEditingId(page.id);
@@ -317,139 +329,7 @@ export default function WhatsAppAdminPage() {
         </p>
       </div>
 
-      {/* Global Appearance Configuration */}
-      <div className="rounded-lg border bg-card p-4 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold">Aparência Global</h2>
-          <p className="text-xs text-muted-foreground">
-            Configurações visuais aplicadas a todas as páginas de redirecionamento /w/[slug]
-          </p>
-        </div>
-
-        {appearanceLoading ? (
-          <p className="text-sm text-muted-foreground">Carregando configuração...</p>
-        ) : (
-          <div className="space-y-4">
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Texto de Redirecionamento</label>
-              <input
-                value={appearanceForm.redirectText}
-                onChange={(e) =>
-                  setAppearanceForm((prev) => ({ ...prev, redirectText: e.target.value }))
-                }
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                placeholder="Redirecionando..."
-                maxLength={100}
-              />
-              <p className="text-xs text-muted-foreground">Texto exibido na caixa de redirecionamento (máx. 100 caracteres)</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <label className="text-sm font-medium">Cor de Fundo (opcional)</label>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    value={appearanceForm.backgroundColor || "#ffffff"}
-                    onChange={(e) =>
-                      setAppearanceForm((prev) => ({ ...prev, backgroundColor: e.target.value }))
-                    }
-                    className="h-10 w-14 cursor-pointer rounded border"
-                  />
-                  <input
-                    value={appearanceForm.backgroundColor}
-                    onChange={(e) =>
-                      setAppearanceForm((prev) => ({ ...prev, backgroundColor: e.target.value }))
-                    }
-                    className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="#RRGGBB"
-                    maxLength={7}
-                  />
-                  {appearanceForm.backgroundColor && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAppearanceForm((prev) => ({ ...prev, backgroundColor: "" }))}
-                    >
-                      Limpar
-                    </Button>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">Formato hexadecimal (#RRGGBB) ou deixe vazio para transparente</p>
-              </div>
-
-              <div className="grid gap-2">
-                <label className="text-sm font-medium">Borda</label>
-                <div className="flex items-center gap-3 pt-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={appearanceForm.borderEnabled}
-                      onChange={(e) =>
-                        setAppearanceForm((prev) => ({ ...prev, borderEnabled: e.target.checked }))
-                      }
-                      className="rounded border-gray-300 h-4 w-4"
-                    />
-                    <span className="text-sm">{appearanceForm.borderEnabled ? "Habilitada" : "Desabilitada"}</span>
-                  </label>
-                </div>
-                <p className="text-xs text-muted-foreground">Borda cinza (#e5e7eb) ao redor da caixa</p>
-              </div>
-            </div>
-
-            {/* Appearance Preview */}
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Preview</label>
-              <div className="flex justify-center rounded-md border bg-zinc-100 p-6">
-                <div
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium",
-                    appearanceForm.borderEnabled && "border border-gray-200"
-                  )}
-                  style={{
-                    backgroundColor: appearanceForm.backgroundColor || "transparent",
-                  }}
-                >
-                  <svg
-                    className="h-4 w-4 animate-spin"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  {appearanceForm.redirectText || "Redirecionando..."}
-                </div>
-              </div>
-            </div>
-
-            {appearanceSuccess && <p className="text-sm text-green-600">{appearanceSuccess}</p>}
-
-            <Button
-              type="button"
-              onClick={handleSaveAppearance}
-              disabled={appearanceSaving || !appearanceForm.redirectText.trim()}
-            >
-              {appearanceSaving ? "Salvando..." : "Salvar Aparência"}
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <form className="space-y-4 rounded-lg border bg-card p-4 shadow-sm" onSubmit={handleSubmit}>
+      <form className="space-y-4 rounded-lg bg-card p-4" onSubmit={handleSubmit}>
         {/* Aba Geral - contém os 5 campos principais */}
         <Tabs defaultValue="geral" className="w-full">
           <TabsList>
@@ -517,12 +397,144 @@ export default function WhatsAppAdminPage() {
               />
               <p className="text-xs text-muted-foreground">Aceita: chat.whatsapp.com ou wa.me</p>
             </div>
+
+            {/* Aparência Global - movido para dentro da aba Geral */}
+            <div className="mt-6 pt-6 border-t">
+              <div className="mb-4">
+                <h3 className="text-base font-semibold">Aparência Global</h3>
+                <p className="text-xs text-muted-foreground">
+                  Configurações visuais aplicadas a todas as páginas de redirecionamento /w/[slug]
+                </p>
+              </div>
+
+              {appearanceLoading ? (
+                <p className="text-sm text-muted-foreground">Carregando configuração...</p>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Texto de Redirecionamento</label>
+                    <input
+                      value={appearanceForm.redirectText}
+                      onChange={(e) =>
+                        setAppearanceForm((prev) => ({ ...prev, redirectText: e.target.value }))
+                      }
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Redirecionando..."
+                      maxLength={100}
+                    />
+                    <p className="text-xs text-muted-foreground">Texto exibido na caixa de redirecionamento (máx. 100 caracteres)</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">Cor de Fundo (opcional)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={appearanceForm.backgroundColor || "#ffffff"}
+                          onChange={(e) =>
+                            setAppearanceForm((prev) => ({ ...prev, backgroundColor: e.target.value }))
+                          }
+                          className="h-10 w-14 cursor-pointer rounded border"
+                        />
+                        <input
+                          value={appearanceForm.backgroundColor}
+                          onChange={(e) =>
+                            setAppearanceForm((prev) => ({ ...prev, backgroundColor: e.target.value }))
+                          }
+                          className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                          placeholder="#RRGGBB"
+                          maxLength={7}
+                        />
+                        {appearanceForm.backgroundColor && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setAppearanceForm((prev) => ({ ...prev, backgroundColor: "" }))}
+                          >
+                            Limpar
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">Formato hexadecimal (#RRGGBB) ou deixe vazio para transparente</p>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">Borda</label>
+                      <div className="flex items-center gap-3 pt-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={appearanceForm.borderEnabled}
+                            onChange={(e) =>
+                              setAppearanceForm((prev) => ({ ...prev, borderEnabled: e.target.checked }))
+                            }
+                            className="rounded border-gray-300 h-4 w-4"
+                          />
+                          <span className="text-sm">{appearanceForm.borderEnabled ? "Habilitada" : "Desabilitada"}</span>
+                        </label>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Borda cinza (#e5e7eb) ao redor da caixa</p>
+                    </div>
+                  </div>
+
+                  {/* Appearance Preview */}
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Preview</label>
+                    <div className="flex justify-center rounded-md border bg-zinc-100 p-6">
+                      <div
+                        className={cn(
+                          "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium",
+                          appearanceForm.borderEnabled && "border border-gray-200"
+                        )}
+                        style={{
+                          backgroundColor: appearanceForm.backgroundColor || "transparent",
+                        }}
+                      >
+                        <svg
+                          className="h-4 w-4 animate-spin"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        {appearanceForm.redirectText || "Redirecionando..."}
+                      </div>
+                    </div>
+                  </div>
+
+                  {appearanceSuccess && <p className="text-sm text-green-600">{appearanceSuccess}</p>}
+
+                  <Button
+                    type="button"
+                    onClick={handleSaveAppearance}
+                    disabled={appearanceSaving || !appearanceForm.redirectText.trim()}
+                  >
+                    {appearanceSaving ? "Salvando..." : "Salvar Aparência"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           {/* Aba Gatilhos - Benefit Cards e Social Proof */}
           <TabsContent value="gatilhos" className="space-y-4 mt-4">
             {/* Benefit Cards Section */}
-            <div className="grid gap-4 rounded-md border bg-accent/30 p-4">
+            <div className="grid gap-4 rounded-md bg-accent/30 p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="text-sm font-medium">Benefit Cards (opcional)</label>
@@ -548,7 +560,7 @@ export default function WhatsAppAdminPage() {
               {form.benefitCards.length > 0 && (
                 <div className="space-y-2">
                   {form.benefitCards.map((card, idx) => (
-                    <div key={idx} className="flex items-start gap-2 rounded-md border bg-background p-3">
+                    <div key={idx} className="flex items-start gap-2 rounded-md bg-background p-3">
                       <div className="flex flex-col gap-1">
                         <button
                           type="button"
@@ -664,7 +676,7 @@ export default function WhatsAppAdminPage() {
                     {form.benefitCards
                       .filter(c => c.emoji && c.title)
                       .map((card, idx) => (
-                        <div key={idx} className="rounded-lg border bg-white p-3 text-center">
+                        <div key={idx} className="rounded-lg bg-white p-3 text-center">
                           <span className={EMOJI_SIZE_CLASSES[form.emojiSize]}>{card.emoji}</span>
                           <h4 className="font-bold text-sm mt-1">{card.title}</h4>
                           {card.description && (
@@ -678,7 +690,7 @@ export default function WhatsAppAdminPage() {
             </div>
 
             {/* Social Proof Notifications Section */}
-            <div className="grid gap-4 rounded-md border bg-accent/30 p-4">
+            <div className="grid gap-4 rounded-md bg-accent/30 p-4">
               <div>
                 <label className="text-sm font-medium">Notificações de Prova Social</label>
                 <p className="text-xs text-muted-foreground">
@@ -738,7 +750,7 @@ export default function WhatsAppAdminPage() {
               </div>
 
               <div className="grid gap-2">
-                <label className="text-sm font-medium">Evento de Redirect *</label>
+                <label className="text-sm font-medium">Evento de Redirect Automático *</label>
                 <select
                   required
                   value={form.redirectEvent}
@@ -751,8 +763,28 @@ export default function WhatsAppAdminPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-muted-foreground">Disparado antes do redirect (clique ou automático)</p>
+                <p className="text-xs text-muted-foreground">Disparado quando o countdown chega a zero</p>
               </div>
+            </div>
+
+            {/* Updated 2026-01-06: Evento do Botão */}
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Evento do Botão (opcional)</label>
+              <select
+                value={form.buttonEvent}
+                onChange={(e) => setForm((prev) => ({ ...prev, buttonEvent: e.target.value as MetaEvent | "" }))}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring sm:w-64"
+              >
+                <option value="">Usar evento de redirect</option>
+                {META_STANDARD_EVENTS.map((event) => (
+                  <option key={event} value={event}>
+                    {event}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Evento disparado ao clicar no botão. Se não selecionado, usa o evento de redirect.
+              </p>
             </div>
 
             <div className="grid gap-2">
@@ -785,16 +817,47 @@ export default function WhatsAppAdminPage() {
               )}
             </div>
 
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Tempo de Redirect (segundos)</label>
-              <input
-                type="number"
-                min={1}
-                max={30}
-                value={form.redirectDelay}
-                onChange={(e) => setForm((prev) => ({ ...prev, redirectDelay: parseInt(e.target.value) || 5 }))}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring sm:w-32"
-              />
+            {/* Updated 2026-01-06: Redirect Toggle and Delay */}
+            <div className="grid gap-4 rounded-md bg-accent/30 p-4">
+              <div>
+                <label className="text-sm font-medium">Redirect Automático</label>
+                <p className="text-xs text-muted-foreground">
+                  Controla se o usuário será redirecionado automaticamente após o countdown
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.redirectEnabled}
+                    onChange={(e) => setForm((prev) => ({ ...prev, redirectEnabled: e.target.checked }))}
+                    className="rounded border-gray-300 h-4 w-4"
+                  />
+                  <span className="text-sm">{form.redirectEnabled ? "Habilitado" : "Desabilitado"}</span>
+                </label>
+              </div>
+
+              {form.redirectEnabled && (
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Tempo de Redirect (segundos)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={form.redirectDelay}
+                    onChange={(e) => setForm((prev) => ({ ...prev, redirectDelay: parseInt(e.target.value) || 5 }))}
+                    className="w-32 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <p className="text-xs text-muted-foreground">Mín: 1s | Máx: 30s | Padrão: 5s</p>
+                </div>
+              )}
+
+              {!form.redirectEnabled && (
+                <p className="text-xs text-muted-foreground italic">
+                  Com redirect desabilitado, o usuário só será redirecionado ao clicar no botão.
+                </p>
+              )}
             </div>
           </TabsContent>
         </Tabs>
@@ -838,7 +901,7 @@ export default function WhatsAppAdminPage() {
         </div>
       </form>
 
-      <div className="rounded-lg border bg-card p-4 shadow-sm">
+      <div className="rounded-lg border bg-card p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Páginas cadastradas</h2>
           <span className="text-xs text-muted-foreground">Total: {pages.length}</span>
@@ -853,7 +916,7 @@ export default function WhatsAppAdminPage() {
               <li
                 key={page.id}
                 className={cn(
-                  "flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between",
+                  "flex flex-col gap-2 rounded-md px-3 py-2 sm:flex-row sm:items-center sm:justify-between",
                   editingId === page.id && "ring-2 ring-primary"
                 )}
               >
@@ -863,7 +926,9 @@ export default function WhatsAppAdminPage() {
                     {page.whatsappUrl}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Eventos: {page.events.join(", ")} | Redirect: {page.redirectEvent} | Delay: {page.redirectDelay}s
+                    Eventos: {page.events.join(", ")} | Redirect: {page.redirectEvent}
+                    {page.buttonEvent && page.buttonEvent !== page.redirectEvent && ` | Botão: ${page.buttonEvent}`}
+                    {page.redirectEnabled ? ` | Delay: ${page.redirectDelay}s` : " | Auto-redirect: Desabilitado"}
                     {page.pixelConfigId && ` | Pixel: ${pixels.find((p) => p.id === page.pixelConfigId)?.label ?? "?"}`}
                   </p>
                   {page.socialProofs.length > 0 && (

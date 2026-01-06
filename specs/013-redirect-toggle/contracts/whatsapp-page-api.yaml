@@ -1,0 +1,223 @@
+# API Contract: WhatsApp Page - Redirect Toggle Feature
+# Feature: 013-redirect-toggle
+# Date: 2026-01-06
+
+openapi: 3.0.3
+info:
+  title: WhatsApp Page API - Redirect Toggle Extension
+  version: 1.1.0
+  description: Extensão da API de páginas WhatsApp para suportar toggle de redirect e eventos separados
+
+paths:
+  /api/whatsapp:
+    post:
+      summary: Criar ou atualizar página WhatsApp
+      description: |
+        Cria nova página ou atualiza existente (se id fornecido).
+        Novos campos adicionados: redirectEnabled, buttonEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatsAppPageInput'
+      responses:
+        '200':
+          description: Página criada/atualizada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppPageRecord'
+        '400':
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Listar todas as páginas WhatsApp
+      responses:
+        '200':
+          description: Lista de páginas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WhatsAppPageRecord'
+
+  /api/whatsapp/track-redirect:
+    post:
+      summary: Registrar evento de tracking
+      description: |
+        Dispara evento server-side via Conversion API.
+        Usado tanto para redirect automático quanto clique no botão.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackRedirectInput'
+      responses:
+        '200':
+          description: Evento registrado
+        '500':
+          description: Erro no tracking (best-effort, não bloqueia redirect)
+
+components:
+  schemas:
+    MetaEvent:
+      type: string
+      enum:
+        - PageView
+        - ViewContent
+        - AddToCart
+        - InitiateCheckout
+        - Lead
+        - Purchase
+        - AddPaymentInfo
+        - CompleteRegistration
+
+    WhatsAppPageInput:
+      type: object
+      required:
+        - headline
+        - buttonText
+        - whatsappUrl
+        - events
+        - redirectEvent
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID para atualização (omitir para criar novo)
+        headline:
+          type: string
+          minLength: 1
+          maxLength: 200
+        headerImageUrl:
+          type: string
+          format: uri
+          description: URL da imagem (HTTPS obrigatório)
+        socialProofs:
+          type: array
+          items:
+            type: string
+        buttonText:
+          type: string
+          minLength: 1
+          maxLength: 100
+        whatsappUrl:
+          type: string
+          format: uri
+          description: URL do WhatsApp (chat.whatsapp.com ou wa.me)
+        pixelConfigId:
+          type: string
+          format: uuid
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetaEvent'
+          minItems: 1
+          description: Eventos disparados no carregamento
+        redirectEvent:
+          $ref: '#/components/schemas/MetaEvent'
+          description: Evento disparado no redirect automático
+        redirectDelay:
+          type: integer
+          minimum: 1
+          maximum: 30
+          default: 5
+          description: Tempo em segundos para redirect automático
+        status:
+          type: string
+          enum: [active, inactive]
+        # --- NOVOS CAMPOS (013-redirect-toggle) ---
+        redirectEnabled:
+          type: boolean
+          default: true
+          description: Habilita/desabilita redirect automático via countdown
+        buttonEvent:
+          $ref: '#/components/schemas/MetaEvent'
+          description: Evento disparado no clique do botão (usa redirectEvent se não definido)
+        # --- FIM NOVOS CAMPOS ---
+        benefitCards:
+          type: array
+          items:
+            $ref: '#/components/schemas/BenefitCard'
+          maxItems: 8
+        emojiSize:
+          type: string
+          enum: [small, medium, large]
+          default: medium
+        socialProofEnabled:
+          type: boolean
+          default: false
+        socialProofInterval:
+          type: integer
+          minimum: 5
+          maximum: 60
+          default: 10
+
+    WhatsAppPageRecord:
+      allOf:
+        - $ref: '#/components/schemas/WhatsAppPageInput'
+        - type: object
+          required:
+            - id
+            - slug
+            - createdAt
+            - updatedAt
+          properties:
+            id:
+              type: string
+              format: uuid
+            slug:
+              type: string
+              description: Slug gerado a partir do headline
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    BenefitCard:
+      type: object
+      required:
+        - emoji
+        - title
+      properties:
+        emoji:
+          type: string
+          maxLength: 2
+        title:
+          type: string
+          maxLength: 50
+        description:
+          type: string
+          maxLength: 150
+
+    TrackRedirectInput:
+      type: object
+      required:
+        - pageId
+        - eventName
+        - eventId
+      properties:
+        pageId:
+          type: string
+          format: uuid
+        eventName:
+          $ref: '#/components/schemas/MetaEvent'
+        eventId:
+          type: string
+          description: ID único para deduplicação entre client e server
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string

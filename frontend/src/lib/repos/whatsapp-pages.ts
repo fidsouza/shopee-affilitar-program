@@ -16,7 +16,8 @@ import { logInfo, logError } from "@/lib/logging";
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
 // Updated 2026-01-01: Benefit cards support (benefitCards[] + emojiSize)
 // Updated 2026-01-03: Social proof notifications (socialProofEnabled + socialProofInterval)
-export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval'> & {
+// Updated 2026-01-06: Redirect toggle (redirectEnabled + buttonEvent)
+export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'buttonEvent'> & {
   id: string;
   slug: string;
   headerImageUrl?: string;
@@ -25,12 +26,14 @@ export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pix
   emojiSize: EmojiSize;
   socialProofEnabled: boolean;
   socialProofInterval: number;
+  redirectEnabled: boolean;
+  buttonEvent?: MetaEvent;
   createdAt: string;
   updatedAt: string;
 };
 
 // Legacy type for migration from buttonEvent to events/redirectEvent and missing fields
-type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval'> & {
+type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'redirectEnabled' | 'buttonEvent'> & {
   buttonEvent?: MetaEvent;
   events?: MetaEvent[];
   redirectEvent?: MetaEvent;
@@ -38,6 +41,7 @@ type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEve
   emojiSize?: EmojiSize;
   socialProofEnabled?: boolean;
   socialProofInterval?: number;
+  redirectEnabled?: boolean;
 };
 
 // Migrate legacy record to new format (backward compatibility)
@@ -62,6 +66,10 @@ function migrateRecord(record: LegacyWhatsAppPageRecord): WhatsAppPageRecord {
   // Add default socialProof fields if missing (backward compatibility)
   migrated.socialProofEnabled = record.socialProofEnabled ?? false;
   migrated.socialProofInterval = record.socialProofInterval ?? 10;
+
+  // Add default redirectEnabled and buttonEvent if missing (backward compatibility - 2026-01-06)
+  migrated.redirectEnabled = record.redirectEnabled ?? true;
+  migrated.buttonEvent = record.buttonEvent; // undefined = uses redirectEvent
 
   return migrated;
 }
@@ -174,6 +182,9 @@ export async function upsertWhatsAppPage(input: WhatsAppPageInput): Promise<What
     // Updated 2026-01-03: Social proof notifications
     socialProofEnabled: parsed.socialProofEnabled ?? existing?.socialProofEnabled ?? false,
     socialProofInterval: parsed.socialProofInterval ?? existing?.socialProofInterval ?? 10,
+    // Updated 2026-01-06: Redirect toggle
+    redirectEnabled: parsed.redirectEnabled ?? existing?.redirectEnabled ?? true,
+    buttonEvent: parsed.buttonEvent ?? existing?.buttonEvent,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };

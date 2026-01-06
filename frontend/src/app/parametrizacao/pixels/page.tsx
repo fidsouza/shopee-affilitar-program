@@ -139,7 +139,7 @@ export default function PixelAdminPage() {
         </p>
       </div>
 
-      <form className="space-y-4 rounded-lg border bg-card p-4 shadow-sm" onSubmit={handleSubmit}>
+      <form className="space-y-4 rounded-lg bg-card p-4" onSubmit={handleSubmit}>
         <div className="grid gap-2">
           <label className="text-sm font-medium">Nome/Label</label>
           <input
@@ -207,7 +207,7 @@ export default function PixelAdminPage() {
         </Button>
       </form>
 
-      <div className="rounded-lg border bg-card p-4 shadow-sm">
+      <div className="rounded-lg border bg-card p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Pixels cadastrados</h2>
           <span className="text-xs text-muted-foreground">
@@ -223,10 +223,7 @@ export default function PixelAdminPage() {
             {pixels.map((pixel) => (
               <li
                 key={pixel.id}
-                className={cn(
-                  "rounded-md border px-3 py-2",
-                  pixel.isDefault ? "border-primary" : "border-border",
-                )}
+                className="rounded-md px-3 py-2"
               >
                 <div className="flex items-center justify-between">
                   <div>
