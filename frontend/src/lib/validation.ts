@@ -141,6 +141,49 @@ export const whatsAppPageSchema = z.object({
   // Redirect Toggle - added 2026-01-06 for feature 013-redirect-toggle
   redirectEnabled: z.boolean().default(true),
   buttonEvent: metaEventEnum.optional(),
+  // Vacancy Counter - added 2026-01-06 for feature 014-whatsapp-vacancy-counter
+  vacancyCounterEnabled: z.boolean().default(false),
+  vacancyHeadline: z.string()
+    .max(100, "Headline do contador deve ter no máximo 100 caracteres")
+    .default(""),
+  vacancyCount: z.number()
+    .int("Número de vagas deve ser inteiro")
+    .min(0, "Número de vagas não pode ser negativo")
+    .default(0),
+  vacancyFooter: z.string()
+    .max(200, "Footer do contador deve ter no máximo 200 caracteres")
+    .optional()
+    .or(z.literal(""))
+    .transform(v => v || null),
+  vacancyBackgroundColor: z.string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Cor deve estar em formato hexadecimal (#RRGGBB)")
+    .optional()
+    .or(z.literal(""))
+    .transform(v => v || null),
+  vacancyCountFontSize: emojiSizeSchema.default("large"),
+  vacancyHeadlineFontSize: emojiSizeSchema.default("medium"),
+  vacancyFooterFontSize: emojiSizeSchema.default("small"),
+  // Dynamic vacancy counter - added 2026-01-06
+  vacancyDecrementInterval: z.number()
+    .int("Intervalo deve ser número inteiro")
+    .min(1, "Intervalo mínimo: 1 segundo")
+    .max(60, "Intervalo máximo: 60 segundos")
+    .default(10),
+  vacancyHeadlineColor: z.string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Cor deve estar em formato hexadecimal (#RRGGBB)")
+    .optional()
+    .or(z.literal(""))
+    .transform(v => v || null),
+  vacancyCountColor: z.string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Cor deve estar em formato hexadecimal (#RRGGBB)")
+    .optional()
+    .or(z.literal(""))
+    .transform(v => v || null),
+  vacancyFooterColor: z.string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Cor deve estar em formato hexadecimal (#RRGGBB)")
+    .optional()
+    .or(z.literal(""))
+    .transform(v => v || null),
 });
 
 export type WhatsAppPageInput = z.infer<typeof whatsAppPageSchema>;
