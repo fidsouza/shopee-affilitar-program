@@ -8,6 +8,7 @@ import {
   type BenefitCard,
   type DeleteWhatsAppPageInput,
   type EmojiSize,
+  type SocialProofItem,
   type WhatsAppPageInput,
 } from "@/lib/validation";
 import { uuidv4 } from "@/lib/uuid";
@@ -18,7 +19,8 @@ import { logInfo, logError } from "@/lib/logging";
 // Updated 2026-01-03: Social proof notifications (socialProofEnabled + socialProofInterval)
 // Updated 2026-01-06: Redirect toggle (redirectEnabled + buttonEvent)
 // Updated 2026-01-06: Vacancy counter (vacancyCounterEnabled + vacancyHeadline + vacancyCount + vacancyFooter + vacancyBackgroundColor + vacancyCountFontSize + vacancyHeadlineFontSize + vacancyFooterFontSize + vacancyDecrementInterval + vacancyHeadlineColor + vacancyCountColor + vacancyFooterColor)
-export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'buttonEvent' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor'> & {
+// Updated 2026-01-07: Social proof carousel (socialProofCarouselItems + carouselAutoPlay + carouselInterval) + Custom footer (footerText)
+export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'buttonEvent' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor' | 'footerText'> & {
   id: string;
   slug: string;
   headerImageUrl?: string;
@@ -43,12 +45,18 @@ export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pix
   vacancyHeadlineColor: string | null;
   vacancyCountColor: string | null;
   vacancyFooterColor: string | null;
+  // Social Proof Carousel - added 2026-01-07
+  socialProofCarouselItems: SocialProofItem[];
+  carouselAutoPlay: boolean;
+  carouselInterval: number;
+  // Custom Footer - added 2026-01-07
+  footerText: string | null;
   createdAt: string;
   updatedAt: string;
 };
 
 // Legacy type for migration from buttonEvent to events/redirectEvent and missing fields
-type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'redirectEnabled' | 'buttonEvent' | 'vacancyCounterEnabled' | 'vacancyHeadline' | 'vacancyCount' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyCountFontSize' | 'vacancyHeadlineFontSize' | 'vacancyFooterFontSize' | 'vacancyDecrementInterval' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor'> & {
+type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'redirectEnabled' | 'buttonEvent' | 'vacancyCounterEnabled' | 'vacancyHeadline' | 'vacancyCount' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyCountFontSize' | 'vacancyHeadlineFontSize' | 'vacancyFooterFontSize' | 'vacancyDecrementInterval' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor' | 'socialProofCarouselItems' | 'carouselAutoPlay' | 'carouselInterval' | 'footerText'> & {
   buttonEvent?: MetaEvent;
   events?: MetaEvent[];
   redirectEvent?: MetaEvent;
@@ -71,6 +79,12 @@ type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEve
   vacancyHeadlineColor?: string | null;
   vacancyCountColor?: string | null;
   vacancyFooterColor?: string | null;
+  // Social Proof Carousel - optional for backward compatibility (2026-01-07)
+  socialProofCarouselItems?: SocialProofItem[];
+  carouselAutoPlay?: boolean;
+  carouselInterval?: number;
+  // Custom Footer - optional for backward compatibility (2026-01-07)
+  footerText?: string | null;
 };
 
 // Migrate legacy record to new format (backward compatibility)
@@ -115,6 +129,14 @@ function migrateRecord(record: LegacyWhatsAppPageRecord): WhatsAppPageRecord {
   migrated.vacancyHeadlineColor = record.vacancyHeadlineColor ?? null;
   migrated.vacancyCountColor = record.vacancyCountColor ?? null;
   migrated.vacancyFooterColor = record.vacancyFooterColor ?? null;
+
+  // Add default social proof carousel fields if missing (backward compatibility - 2026-01-07)
+  migrated.socialProofCarouselItems = record.socialProofCarouselItems ?? [];
+  migrated.carouselAutoPlay = record.carouselAutoPlay ?? false;
+  migrated.carouselInterval = record.carouselInterval ?? 5;
+
+  // Add default footerText if missing (backward compatibility - 2026-01-07)
+  migrated.footerText = record.footerText ?? null;
 
   return migrated;
 }
@@ -244,6 +266,12 @@ export async function upsertWhatsAppPage(input: WhatsAppPageInput): Promise<What
     vacancyHeadlineColor: parsed.vacancyHeadlineColor ?? existing?.vacancyHeadlineColor ?? null,
     vacancyCountColor: parsed.vacancyCountColor ?? existing?.vacancyCountColor ?? null,
     vacancyFooterColor: parsed.vacancyFooterColor ?? existing?.vacancyFooterColor ?? null,
+    // Updated 2026-01-07: Social proof carousel
+    socialProofCarouselItems: parsed.socialProofCarouselItems ?? existing?.socialProofCarouselItems ?? [],
+    carouselAutoPlay: parsed.carouselAutoPlay ?? existing?.carouselAutoPlay ?? false,
+    carouselInterval: parsed.carouselInterval ?? existing?.carouselInterval ?? 5,
+    // Updated 2026-01-07: Custom footer
+    footerText: parsed.footerText ?? existing?.footerText ?? null,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };

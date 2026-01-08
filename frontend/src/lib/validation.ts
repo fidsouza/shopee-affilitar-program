@@ -90,6 +90,38 @@ export type BenefitCard = z.infer<typeof benefitCardSchema>;
 export const emojiSizeSchema = z.enum(["small", "medium", "large"]).default("medium");
 export type EmojiSize = z.infer<typeof emojiSizeSchema>;
 
+// Social Proof Carousel Items - added 2026-01-07 for feature 015-whatsapp-social-carousel-footer
+export const socialProofTextItemSchema = z.object({
+  id: z.string().uuid(),
+  type: z.literal('text'),
+  description: z.string()
+    .min(1, "Descrição é obrigatória")
+    .max(500, "Descrição deve ter no máximo 500 caracteres"),
+  author: z.string()
+    .min(1, "Autor é obrigatório")
+    .max(100, "Nome do autor deve ter no máximo 100 caracteres"),
+  city: z.string()
+    .min(1, "Cidade é obrigatória")
+    .max(100, "Cidade deve ter no máximo 100 caracteres"),
+});
+
+export const socialProofImageItemSchema = z.object({
+  id: z.string().uuid(),
+  type: z.literal('image'),
+  imageUrl: z.string()
+    .url("URL inválida")
+    .refine((url) => url.startsWith("https://"), "URL deve usar HTTPS"),
+});
+
+export const socialProofItemSchema = z.discriminatedUnion('type', [
+  socialProofTextItemSchema,
+  socialProofImageItemSchema,
+]);
+
+export type SocialProofItem = z.infer<typeof socialProofItemSchema>;
+export type SocialProofTextItem = z.infer<typeof socialProofTextItemSchema>;
+export type SocialProofImageItem = z.infer<typeof socialProofImageItemSchema>;
+
 // WhatsApp Page Validation
 const allowedWhatsAppHosts = ["chat.whatsapp.com", "wa.me"];
 
@@ -181,6 +213,22 @@ export const whatsAppPageSchema = z.object({
     .transform(v => v || null),
   vacancyFooterColor: z.string()
     .regex(/^#[0-9A-Fa-f]{6}$/, "Cor deve estar em formato hexadecimal (#RRGGBB)")
+    .optional()
+    .or(z.literal(""))
+    .transform(v => v || null),
+  // Social Proof Carousel - added 2026-01-07 for feature 015-whatsapp-social-carousel-footer
+  socialProofCarouselItems: z.array(socialProofItemSchema)
+    .max(10, "Máximo de 10 provas sociais por página")
+    .default([]),
+  carouselAutoPlay: z.boolean().default(false),
+  carouselInterval: z.number()
+    .int("Intervalo deve ser número inteiro")
+    .min(3, "Intervalo mínimo: 3 segundos")
+    .max(15, "Intervalo máximo: 15 segundos")
+    .default(5),
+  // Custom Footer - added 2026-01-07 for feature 015-whatsapp-social-carousel-footer
+  footerText: z.string()
+    .max(500, "Footer deve ter no máximo 500 caracteres")
     .optional()
     .or(z.literal(""))
     .transform(v => v || null),
