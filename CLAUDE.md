@@ -93,6 +93,8 @@ Optional:
 - N/A (sem alterações no modelo de dados) (010-whatsapp-admin-tabs)
 - TypeScript 5, Node.js 20 + Next.js 16.0.7 (App Router), React 19, Tailwind CSS 3.4, shadcn/ui (Radix UI), Zod 4.1 (012-admin-appearance-general)
 - Vercel Edge Config (REST API) - sem alterações nesta feature (012-admin-appearance-general)
+- TypeScript 5, Node.js 20 + Next.js 16.0.7 (App Router), React 19, Tailwind CSS 3.4, shadcn/ui (Radix UI), Zod 4.1, lucide-reac (015-whatsapp-social-carousel-footer)
+- Vercel Edge Config (REST API) - padrão existente: index + registros individuais (015-whatsapp-social-carousel-footer)
 
 ## Recent Changes
 - 004-home-page-update: Home page simplificada para "Página em Construção", rota admin renomeada para /parametrizacao

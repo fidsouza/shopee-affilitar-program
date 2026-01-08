@@ -9,7 +9,8 @@ import { useConfirmDelete } from "@/lib/hooks/useConfirmDelete";
 import type { PixelRecord } from "@/lib/repos/pixels";
 import type { WhatsAppPageRecord } from "@/lib/repos/whatsapp-pages";
 import type { WhatsAppAppearanceRecord } from "@/lib/repos/whatsapp-appearance";
-import type { BenefitCard, EmojiSize } from "@/lib/validation";
+import type { BenefitCard, EmojiSize, SocialProofItem } from "@/lib/validation";
+import { SocialProofCarousel } from "@/components/social-proof-carousel";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
 // Updated 2026-01-03: Social proof notifications (socialProofEnabled + socialProofInterval)
 // Updated 2026-01-06: Redirect toggle (redirectEnabled + buttonEvent)
 // Updated 2026-01-06: Vacancy counter (vacancyCounterEnabled + vacancyHeadline + vacancyCount + vacancyFooter + vacancyBackgroundColor + vacancyCountFontSize + vacancyHeadlineFontSize + vacancyFooterFontSize + vacancyDecrementInterval + vacancyHeadlineColor + vacancyCountColor + vacancyFooterColor)
+// Updated 2026-01-07: Social proof carousel (socialProofCarouselItems + carouselAutoPlay + carouselInterval) + Custom footer (footerText)
 type FormState = {
   id?: string;
   headline: string;
@@ -70,6 +72,12 @@ type FormState = {
   vacancyHeadlineColor: string;
   vacancyCountColor: string;
   vacancyFooterColor: string;
+  // Social Proof Carousel - added 2026-01-07
+  socialProofCarouselItems: SocialProofItem[];
+  carouselAutoPlay: boolean;
+  carouselInterval: number;
+  // Custom Footer - added 2026-01-07
+  footerText: string;
 };
 
 const initialForm: FormState = {
@@ -104,6 +112,12 @@ const initialForm: FormState = {
   vacancyHeadlineColor: "",
   vacancyCountColor: "",
   vacancyFooterColor: "",
+  // Social Proof Carousel defaults - added 2026-01-07
+  socialProofCarouselItems: [],
+  carouselAutoPlay: false,
+  carouselInterval: 5,
+  // Custom Footer defaults - added 2026-01-07
+  footerText: "",
 };
 
 export default function WhatsAppAdminPage() {
@@ -227,6 +241,12 @@ export default function WhatsAppAdminPage() {
         vacancyHeadlineColor: form.vacancyHeadlineColor || undefined,
         vacancyCountColor: form.vacancyCountColor || undefined,
         vacancyFooterColor: form.vacancyFooterColor || undefined,
+        // Updated 2026-01-07: Social proof carousel
+        socialProofCarouselItems: form.socialProofCarouselItems,
+        carouselAutoPlay: form.carouselAutoPlay,
+        carouselInterval: form.carouselInterval,
+        // Updated 2026-01-07: Custom footer
+        footerText: form.footerText || undefined,
       };
 
       const res = await fetch("/api/whatsapp", {
@@ -297,6 +317,12 @@ export default function WhatsAppAdminPage() {
       vacancyHeadlineColor: page.vacancyHeadlineColor ?? "",
       vacancyCountColor: page.vacancyCountColor ?? "",
       vacancyFooterColor: page.vacancyFooterColor ?? "",
+      // Updated 2026-01-07: Social proof carousel
+      socialProofCarouselItems: page.socialProofCarouselItems ?? [],
+      carouselAutoPlay: page.carouselAutoPlay ?? false,
+      carouselInterval: page.carouselInterval ?? 5,
+      // Updated 2026-01-07: Custom footer
+      footerText: page.footerText ?? "",
     });
     setSocialProofsText(page.socialProofs.join("\n"));
     setEditingId(page.id);
@@ -784,6 +810,251 @@ export default function WhatsAppAdminPage() {
                   <p className="text-xs text-muted-foreground">Mínimo: 5s | Máximo: 60s | Padrão: 10s</p>
                 </div>
               )}
+            </div>
+
+            {/* Social Proof Carousel Section - added 2026-01-07 */}
+            <div className="grid gap-4 rounded-md bg-accent/30 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium">Carrossel de Provas Sociais</label>
+                  <p className="text-xs text-muted-foreground">
+                    Adicione depoimentos de clientes em texto ou imagens (máx. 10)
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.carouselAutoPlay}
+                      onChange={(e) => setForm((prev) => ({ ...prev, carouselAutoPlay: e.target.checked }))}
+                      className="rounded border-gray-300 h-4 w-4"
+                    />
+                    <span className="text-xs">Auto-play</span>
+                  </label>
+                  {form.carouselAutoPlay && (
+                    <input
+                      type="number"
+                      min={3}
+                      max={15}
+                      value={form.carouselInterval}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 5;
+                        setForm((prev) => ({ ...prev, carouselInterval: Math.min(15, Math.max(3, val)) }));
+                      }}
+                      className="w-16 rounded-md border bg-background px-2 py-1 text-xs outline-none"
+                      title="Intervalo em segundos (3-15)"
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Existing Carousel Items List */}
+              {form.socialProofCarouselItems.length > 0 && (
+                <div className="space-y-2">
+                  {form.socialProofCarouselItems.map((item, idx) => (
+                    <div key={item.id} className="flex items-start gap-2 rounded-md bg-background p-3">
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => {
+                            const newItems = [...form.socialProofCarouselItems];
+                            [newItems[idx - 1], newItems[idx]] = [newItems[idx], newItems[idx - 1]];
+                            setForm((prev) => ({ ...prev, socialProofCarouselItems: newItems }));
+                          }}
+                          className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === form.socialProofCarouselItems.length - 1}
+                          onClick={() => {
+                            const newItems = [...form.socialProofCarouselItems];
+                            [newItems[idx], newItems[idx + 1]] = [newItems[idx + 1], newItems[idx]];
+                            setForm((prev) => ({ ...prev, socialProofCarouselItems: newItems }));
+                          }}
+                          className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
+                        >
+                          ▼
+                        </button>
+                      </div>
+                      <span className="flex-shrink-0 text-2xl">
+                        {item.type === 'text' ? '💬' : '🖼️'}
+                      </span>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        {item.type === 'text' ? (
+                          <>
+                            <textarea
+                              value={item.description}
+                              onChange={(e) => {
+                                const newItems = [...form.socialProofCarouselItems];
+                                newItems[idx] = { ...item, description: e.target.value };
+                                setForm((prev) => ({ ...prev, socialProofCarouselItems: newItems }));
+                              }}
+                              placeholder="Descrição do depoimento"
+                              maxLength={500}
+                              rows={2}
+                              className="w-full rounded border bg-background px-2 py-1 text-sm"
+                            />
+                            <div className="flex gap-2">
+                              <input
+                                value={item.author}
+                                onChange={(e) => {
+                                  const newItems = [...form.socialProofCarouselItems];
+                                  newItems[idx] = { ...item, author: e.target.value };
+                                  setForm((prev) => ({ ...prev, socialProofCarouselItems: newItems }));
+                                }}
+                                placeholder="Autor"
+                                maxLength={100}
+                                className="flex-1 rounded border bg-background px-2 py-1 text-sm"
+                              />
+                              <input
+                                value={item.city}
+                                onChange={(e) => {
+                                  const newItems = [...form.socialProofCarouselItems];
+                                  newItems[idx] = { ...item, city: e.target.value };
+                                  setForm((prev) => ({ ...prev, socialProofCarouselItems: newItems }));
+                                }}
+                                placeholder="Cidade"
+                                maxLength={100}
+                                className="flex-1 rounded border bg-background px-2 py-1 text-sm"
+                              />
+                            </div>
+                            {(!item.description || !item.author || !item.city) && (
+                              <p className="text-xs text-destructive">Descrição, autor e cidade são obrigatórios</p>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <input
+                              value={item.imageUrl}
+                              onChange={(e) => {
+                                const newItems = [...form.socialProofCarouselItems];
+                                newItems[idx] = { ...item, imageUrl: e.target.value };
+                                setForm((prev) => ({ ...prev, socialProofCarouselItems: newItems }));
+                              }}
+                              placeholder="URL da imagem (HTTPS)"
+                              className="w-full rounded border bg-background px-2 py-1 text-sm"
+                            />
+                            {item.imageUrl && (
+                              <img
+                                src={item.imageUrl}
+                                alt="Preview"
+                                className="mt-1 max-h-20 rounded object-contain"
+                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                              />
+                            )}
+                            {!item.imageUrl && (
+                              <p className="text-xs text-destructive">URL da imagem é obrigatória</p>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForm((prev) => ({
+                            ...prev,
+                            socialProofCarouselItems: prev.socialProofCarouselItems.filter((_, i) => i !== idx),
+                          }));
+                        }}
+                        className="text-destructive hover:text-destructive/80 text-sm px-2"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add New Item Buttons */}
+              {form.socialProofCarouselItems.length < 10 && (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newItem: SocialProofItem = {
+                        id: crypto.randomUUID(),
+                        type: 'text',
+                        description: '',
+                        author: '',
+                        city: '',
+                      };
+                      setForm((prev) => ({
+                        ...prev,
+                        socialProofCarouselItems: [...prev.socialProofCarouselItems, newItem],
+                      }));
+                    }}
+                  >
+                    + Adicionar Texto
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newItem: SocialProofItem = {
+                        id: crypto.randomUUID(),
+                        type: 'image',
+                        imageUrl: '',
+                      };
+                      setForm((prev) => ({
+                        ...prev,
+                        socialProofCarouselItems: [...prev.socialProofCarouselItems, newItem],
+                      }));
+                    }}
+                  >
+                    + Adicionar Imagem
+                  </Button>
+                </div>
+              )}
+              {form.socialProofCarouselItems.length >= 10 && (
+                <p className="text-xs text-muted-foreground">Limite de 10 provas sociais atingido</p>
+              )}
+
+              {/* Preview Section */}
+              {form.socialProofCarouselItems.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+                  <div className="rounded-md border bg-zinc-100 p-4">
+                    <SocialProofCarousel
+                      items={form.socialProofCarouselItems.filter(item =>
+                        item.type === 'text'
+                          ? item.description && item.author && item.city
+                          : item.imageUrl
+                      )}
+                      autoPlay={false}
+                      interval={form.carouselInterval}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Custom Footer Section - added 2026-01-07 */}
+            <div className="grid gap-4 rounded-md bg-accent/30 p-4">
+              <div>
+                <label className="text-sm font-medium">Rodapé Personalizado</label>
+                <p className="text-xs text-muted-foreground">
+                  Texto exibido no final da página (avisos legais, contato, etc.)
+                </p>
+              </div>
+              <div className="grid gap-2">
+                <textarea
+                  value={form.footerText}
+                  onChange={(e) => setForm((prev) => ({ ...prev, footerText: e.target.value }))}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Ex: Este grupo é exclusivo para membros. Dúvidas: contato@exemplo.com"
+                  rows={3}
+                  maxLength={500}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {form.footerText.length}/500 caracteres | Deixe vazio para não exibir
+                </p>
+              </div>
             </div>
 
             {/* Vacancy Counter Section - added 2026-01-06 */}

@@ -5,6 +5,8 @@ import type { WhatsAppPageRecord } from "@/lib/repos/whatsapp-pages";
 import type { WhatsAppAppearanceRecord } from "@/lib/repos/whatsapp-appearance";
 import type { EmojiSize } from "@/lib/validation";
 import { SocialProofNotification } from "@/components/social-proof-notification";
+import { SocialProofCarousel } from "@/components/social-proof-carousel";
+import { PageFooter } from "@/components/page-footer";
 
 // Emoji size CSS classes mapping
 const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
@@ -230,8 +232,8 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
           {page.headline}
         </h1>
 
-        {/* Social Proofs */}
-        {page.socialProofs.length > 0 && (
+        {/* Legacy Social Proofs - Only show if no carousel items exist */}
+        {(!page.socialProofCarouselItems || page.socialProofCarouselItems.length === 0) && page.socialProofs.length > 0 && (
           <div className="flex flex-col gap-2">
             {page.socialProofs.map((proof, idx) => (
               <span
@@ -378,6 +380,21 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
       {page.socialProofEnabled && (
         <SocialProofNotification interval={page.socialProofInterval} />
       )}
+
+      {/* Social Proof Carousel - Added 2026-01-07 */}
+      {/* Positioned before footer for better visual flow */}
+      {page.socialProofCarouselItems && page.socialProofCarouselItems.length > 0 && (
+        <div className="w-full max-w-md px-4 mt-8">
+          <SocialProofCarousel
+            items={page.socialProofCarouselItems}
+            autoPlay={page.carouselAutoPlay}
+            interval={page.carouselInterval}
+          />
+        </div>
+      )}
+
+      {/* Custom Footer - Added 2026-01-07 */}
+      <PageFooter text={page.footerText} />
     </main>
   );
 }
