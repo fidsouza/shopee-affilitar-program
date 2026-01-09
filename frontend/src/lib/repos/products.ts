@@ -1,7 +1,7 @@
 'use server';
 
 import type { MetaEvent } from "@/lib/meta-events";
-import { readValue, upsertItems } from "@/lib/edge-config";
+import { readValue, readValues, upsertItems } from "@/lib/edge-config";
 import {
   deleteProductSchema,
   productLinkSchema,
@@ -58,10 +58,11 @@ function uniqueSlug(base: string, index: ProductIndexEntry[], currentId?: string
 export async function listProducts(): Promise<ProductRecord[]> {
   const index = await getIndex();
   if (index.length === 0) return [];
-  const entries = await Promise.all(
-    index.map((item) => readValue<ProductRecord>(productKey(item.id))),
-  );
-  return entries.filter(Boolean) as ProductRecord[];
+
+  const keys = index.map((item) => productKey(item.id));
+  const records = await readValues<Record<string, ProductRecord>>(keys);
+
+  return Object.values(records).filter(Boolean) as ProductRecord[];
 }
 
 export async function upsertProduct(input: ProductLinkInput): Promise<ProductRecord> {

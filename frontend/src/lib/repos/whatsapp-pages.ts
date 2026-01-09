@@ -1,7 +1,7 @@
 'use server';
 
 import type { MetaEvent } from "@/lib/meta-events";
-import { readValue, upsertItems } from "@/lib/edge-config";
+import { readValue, readValues, upsertItems } from "@/lib/edge-config";
 import {
   deleteWhatsAppPageSchema,
   whatsAppPageSchema,
@@ -182,11 +182,12 @@ function uniqueSlug(base: string, index: WhatsAppPageIndexEntry[], currentId?: s
 export async function listWhatsAppPages(): Promise<WhatsAppPageRecord[]> {
   const index = await getIndex();
   if (index.length === 0) return [];
-  const entries = await Promise.all(
-    index.map((item) => readValue<LegacyWhatsAppPageRecord>(whatsappPageKey(item.id))),
-  );
+
+  const keys = index.map((item) => whatsappPageKey(item.id));
+  const records = await readValues<Record<string, LegacyWhatsAppPageRecord>>(keys);
+
   // Apply migration for legacy records (buttonEvent -> events/redirectEvent)
-  return entries.filter(Boolean).map((record) => migrateRecord(record!));
+  return Object.values(records).filter(Boolean).map((record) => migrateRecord(record!));
 }
 
 export async function getWhatsAppPageBySlug(slug: string): Promise<WhatsAppPageRecord | null> {

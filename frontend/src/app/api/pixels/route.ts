@@ -3,12 +3,16 @@ import { NextResponse } from 'next/server';
 import { listPixels, upsertPixel } from '@/lib/repos/pixels';
 
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const pixels = await listPixels();
-    return NextResponse.json(pixels, { status: 200 });
+    return NextResponse.json(pixels, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'private, max-age=0, stale-while-revalidate=30',
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to load pixels', details: String(error) },

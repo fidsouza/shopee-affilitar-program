@@ -47,8 +47,8 @@ export default function ProductAdminPage() {
     const load = async () => {
       try {
         const [pixelsRes, productsRes] = await Promise.all([
-          fetch("/api/pixels", { cache: "no-store" }),
-          fetch("/api/products", { cache: "no-store" }),
+          fetch("/api/pixels"),
+          fetch("/api/products"),
         ]);
         if (!pixelsRes.ok || !productsRes.ok) throw new Error("Erro ao carregar dados");
         const [pixelsData, productsData] = (await Promise.all([

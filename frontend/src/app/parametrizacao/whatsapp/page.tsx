@@ -153,9 +153,9 @@ export default function WhatsAppAdminPage() {
     const load = async () => {
       try {
         const [pixelsRes, pagesRes, appearanceRes] = await Promise.all([
-          fetch("/api/pixels", { cache: "no-store" }),
-          fetch("/api/whatsapp", { cache: "no-store" }),
-          fetch("/api/whatsapp/appearance", { cache: "no-store" }),
+          fetch("/api/pixels"),
+          fetch("/api/whatsapp"),
+          fetch("/api/whatsapp/appearance"),
         ]);
         if (!pixelsRes.ok || !pagesRes.ok) throw new Error("Erro ao carregar dados");
         const [pixelsData, pagesData] = (await Promise.all([
