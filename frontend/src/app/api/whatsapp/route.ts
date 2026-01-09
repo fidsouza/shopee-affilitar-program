@@ -3,12 +3,16 @@ import { NextResponse } from 'next/server';
 import { listWhatsAppPages, upsertWhatsAppPage } from '@/lib/repos/whatsapp-pages';
 
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const pages = await listWhatsAppPages();
-    return NextResponse.json(pages, { status: 200 });
+    return NextResponse.json(pages, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'private, max-age=0, stale-while-revalidate=30',
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to load WhatsApp pages', details: String(error) },

@@ -8,7 +8,11 @@ import { ZodError } from "zod";
 export async function GET() {
   try {
     const config = await getWhatsAppAppearance();
-    return NextResponse.json(config);
+    return NextResponse.json(config, {
+      headers: {
+        'Cache-Control': 'private, max-age=0, stale-while-revalidate=30',
+      },
+    });
   } catch (error) {
     console.error("Error fetching appearance config:", error);
     return NextResponse.json(

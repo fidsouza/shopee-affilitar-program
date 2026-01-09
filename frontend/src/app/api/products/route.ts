@@ -3,12 +3,16 @@ import { NextResponse } from 'next/server';
 import { listProducts, upsertProduct } from '@/lib/repos/products';
 
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const products = await listProducts();
-    return NextResponse.json(products, { status: 200 });
+    return NextResponse.json(products, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'private, max-age=0, stale-while-revalidate=30',
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to load products', details: String(error) },

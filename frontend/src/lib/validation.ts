@@ -232,6 +232,8 @@ export const whatsAppPageSchema = z.object({
     .optional()
     .or(z.literal(""))
     .transform(v => v || null),
+  // Subheadline Font Size - added 2026-01-08 for feature 016-subheadline-font-size
+  subheadlineFontSize: emojiSizeSchema.default("medium"),
 });
 
 export type WhatsAppPageInput = z.infer<typeof whatsAppPageSchema>;

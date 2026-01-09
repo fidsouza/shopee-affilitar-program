@@ -78,6 +78,8 @@ type FormState = {
   carouselInterval: number;
   // Custom Footer - added 2026-01-07
   footerText: string;
+  // Subheadline Font Size - added 2026-01-08
+  subheadlineFontSize: EmojiSize;
 };
 
 const initialForm: FormState = {
@@ -118,6 +120,8 @@ const initialForm: FormState = {
   carouselInterval: 5,
   // Custom Footer defaults - added 2026-01-07
   footerText: "",
+  // Subheadline Font Size defaults - added 2026-01-08
+  subheadlineFontSize: "medium",
 };
 
 export default function WhatsAppAdminPage() {
@@ -153,9 +157,9 @@ export default function WhatsAppAdminPage() {
     const load = async () => {
       try {
         const [pixelsRes, pagesRes, appearanceRes] = await Promise.all([
-          fetch("/api/pixels", { cache: "no-store" }),
-          fetch("/api/whatsapp", { cache: "no-store" }),
-          fetch("/api/whatsapp/appearance", { cache: "no-store" }),
+          fetch("/api/pixels"),
+          fetch("/api/whatsapp"),
+          fetch("/api/whatsapp/appearance"),
         ]);
         if (!pixelsRes.ok || !pagesRes.ok) throw new Error("Erro ao carregar dados");
         const [pixelsData, pagesData] = (await Promise.all([
@@ -247,6 +251,8 @@ export default function WhatsAppAdminPage() {
         carouselInterval: form.carouselInterval,
         // Updated 2026-01-07: Custom footer
         footerText: form.footerText || undefined,
+        // Updated 2026-01-08: Subheadline font size
+        subheadlineFontSize: form.subheadlineFontSize,
       };
 
       const res = await fetch("/api/whatsapp", {
@@ -323,6 +329,8 @@ export default function WhatsAppAdminPage() {
       carouselInterval: page.carouselInterval ?? 5,
       // Updated 2026-01-07: Custom footer
       footerText: page.footerText ?? "",
+      // Updated 2026-01-08: Subheadline font size
+      subheadlineFontSize: page.subheadlineFontSize ?? "medium",
     });
     setSocialProofsText(page.socialProofs.join("\n"));
     setEditingId(page.id);
@@ -446,14 +454,36 @@ export default function WhatsAppAdminPage() {
             </div>
 
             <div className="grid gap-2">
-              <label className="text-sm font-medium">Provas Sociais (uma por linha)</label>
+              <label className="text-sm font-medium">Subheadline (uma por linha)</label>
               <textarea
                 value={socialProofsText}
                 onChange={(e) => setSocialProofsText(e.target.value)}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                placeholder={"+5.000 membros\n⭐ 4.9 de avaliação\n🔥 Ofertas exclusivas diárias"}
+                placeholder={"Texto exibido abaixo do título principal\nUse múltiplas linhas para mais destaque"}
                 rows={3}
               />
+              <p className="text-xs text-muted-foreground">Texto exibido logo abaixo do headline na página de redirecionamento</p>
+
+              {/* Subheadline Font Size Selector - added 2026-01-08 */}
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-sm text-muted-foreground">Tamanho da fonte:</span>
+                <div className="flex gap-1">
+                  {(["small", "medium", "large"] as const).map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, subheadlineFontSize: size }))}
+                      className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                        form.subheadlineFontSize === size
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background hover:bg-muted border-input"
+                      }`}
+                    >
+                      {size === "small" ? "Pequeno" : size === "medium" ? "Médio" : "Grande"}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="grid gap-2">

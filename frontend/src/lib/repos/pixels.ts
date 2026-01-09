@@ -1,7 +1,7 @@
 'use server';
 
 import { META_STANDARD_EVENTS, type MetaEvent } from "@/lib/meta-events";
-import { readValue, upsertItems } from "@/lib/edge-config";
+import { readValue, readValues, upsertItems } from "@/lib/edge-config";
 import {
   deletePixelSchema,
   pixelConfigSchema,
@@ -50,9 +50,11 @@ function ensureDefault(index: PixelIndexEntry[]): PixelIndexEntry[] {
 export async function listPixels(): Promise<PixelRecord[]> {
   const index = await getIndex();
   if (index.length === 0) return [];
+
   const keys = index.map((p) => pixelKey(p.id));
-  const entries = await Promise.all(keys.map((key) => readValue<PixelRecord>(key)));
-  return entries.filter(Boolean) as PixelRecord[];
+  const records = await readValues<Record<string, PixelRecord>>(keys);
+
+  return Object.values(records).filter(Boolean) as PixelRecord[];
 }
 
 export async function upsertPixel(input: PixelConfigInput): Promise<PixelRecord> {
