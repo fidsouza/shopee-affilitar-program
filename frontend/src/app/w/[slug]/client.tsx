@@ -34,6 +34,13 @@ const VACANCY_FOOTER_SIZE_CLASSES: Record<EmojiSize, string> = {
   large: "text-base",
 };
 
+// Subheadline font size classes - added 2026-01-08
+const SUBHEADLINE_SIZE_CLASSES: Record<EmojiSize, string> = {
+  small: "text-xs sm:text-sm",
+  medium: "text-sm sm:text-base",
+  large: "text-base sm:text-lg",
+};
+
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
 // Updated 2026-01-04: Global appearance configuration
 // Updated 2026-01-06: Separate button event support (buttonEvent + buttonEventId)
@@ -232,17 +239,19 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
           {page.headline}
         </h1>
 
-        {/* Legacy Social Proofs - Only show if no carousel items exist */}
-        {(!page.socialProofCarouselItems || page.socialProofCarouselItems.length === 0) && page.socialProofs.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {page.socialProofs.map((proof, idx) => (
-              <span
-                key={idx}
-                className="text-gray-600 text-sm sm:text-base"
-              >
-                {proof}
-              </span>
-            ))}
+        {/* Subheadline - Updated 2026-01-08: Always show when configured, with font size control */}
+        {page.socialProofs.filter((s) => s.trim()).length > 0 && (
+          <div className="flex flex-col gap-1">
+            {page.socialProofs
+              .filter((s) => s.trim())
+              .map((line, idx) => (
+                <span
+                  key={idx}
+                  className={`text-gray-600 ${SUBHEADLINE_SIZE_CLASSES[page.subheadlineFontSize ?? "medium"]}`}
+                >
+                  {line}
+                </span>
+              ))}
           </div>
         )}
 

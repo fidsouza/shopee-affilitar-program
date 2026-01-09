@@ -20,7 +20,8 @@ import { logInfo, logError } from "@/lib/logging";
 // Updated 2026-01-06: Redirect toggle (redirectEnabled + buttonEvent)
 // Updated 2026-01-06: Vacancy counter (vacancyCounterEnabled + vacancyHeadline + vacancyCount + vacancyFooter + vacancyBackgroundColor + vacancyCountFontSize + vacancyHeadlineFontSize + vacancyFooterFontSize + vacancyDecrementInterval + vacancyHeadlineColor + vacancyCountColor + vacancyFooterColor)
 // Updated 2026-01-07: Social proof carousel (socialProofCarouselItems + carouselAutoPlay + carouselInterval) + Custom footer (footerText)
-export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'buttonEvent' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor' | 'footerText'> & {
+// Updated 2026-01-08: Subheadline font size (subheadlineFontSize)
+export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'buttonEvent' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor' | 'footerText' | 'subheadlineFontSize'> & {
   id: string;
   slug: string;
   headerImageUrl?: string;
@@ -51,12 +52,14 @@ export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pix
   carouselInterval: number;
   // Custom Footer - added 2026-01-07
   footerText: string | null;
+  // Subheadline Font Size - added 2026-01-08
+  subheadlineFontSize: EmojiSize;
   createdAt: string;
   updatedAt: string;
 };
 
 // Legacy type for migration from buttonEvent to events/redirectEvent and missing fields
-type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'redirectEnabled' | 'buttonEvent' | 'vacancyCounterEnabled' | 'vacancyHeadline' | 'vacancyCount' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyCountFontSize' | 'vacancyHeadlineFontSize' | 'vacancyFooterFontSize' | 'vacancyDecrementInterval' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor' | 'socialProofCarouselItems' | 'carouselAutoPlay' | 'carouselInterval' | 'footerText'> & {
+type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEvent' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'redirectEnabled' | 'buttonEvent' | 'vacancyCounterEnabled' | 'vacancyHeadline' | 'vacancyCount' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyCountFontSize' | 'vacancyHeadlineFontSize' | 'vacancyFooterFontSize' | 'vacancyDecrementInterval' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor' | 'socialProofCarouselItems' | 'carouselAutoPlay' | 'carouselInterval' | 'footerText' | 'subheadlineFontSize'> & {
   buttonEvent?: MetaEvent;
   events?: MetaEvent[];
   redirectEvent?: MetaEvent;
@@ -85,6 +88,8 @@ type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEve
   carouselInterval?: number;
   // Custom Footer - optional for backward compatibility (2026-01-07)
   footerText?: string | null;
+  // Subheadline Font Size - optional for backward compatibility (2026-01-08)
+  subheadlineFontSize?: EmojiSize;
 };
 
 // Migrate legacy record to new format (backward compatibility)
@@ -137,6 +142,9 @@ function migrateRecord(record: LegacyWhatsAppPageRecord): WhatsAppPageRecord {
 
   // Add default footerText if missing (backward compatibility - 2026-01-07)
   migrated.footerText = record.footerText ?? null;
+
+  // Add default subheadlineFontSize if missing (backward compatibility - 2026-01-08)
+  migrated.subheadlineFontSize = record.subheadlineFontSize ?? "medium";
 
   return migrated;
 }
@@ -273,6 +281,8 @@ export async function upsertWhatsAppPage(input: WhatsAppPageInput): Promise<What
     carouselInterval: parsed.carouselInterval ?? existing?.carouselInterval ?? 5,
     // Updated 2026-01-07: Custom footer
     footerText: parsed.footerText ?? existing?.footerText ?? null,
+    // Updated 2026-01-08: Subheadline font size
+    subheadlineFontSize: parsed.subheadlineFontSize ?? existing?.subheadlineFontSize ?? "medium",
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
