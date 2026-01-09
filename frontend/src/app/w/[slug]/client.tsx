@@ -41,6 +41,13 @@ const SUBHEADLINE_SIZE_CLASSES: Record<EmojiSize, string> = {
   large: "text-base sm:text-lg",
 };
 
+// Button size classes - added 2026-01-09 for feature 017-whatsapp-button-size
+const BUTTON_SIZE_CLASSES: Record<EmojiSize, string> = {
+  small: "px-6 py-3 text-base",
+  medium: "px-8 py-4 text-lg",
+  large: "px-10 py-5 text-xl",
+};
+
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
 // Updated 2026-01-04: Global appearance configuration
 // Updated 2026-01-06: Separate button event support (buttonEvent + buttonEventId)
@@ -257,13 +264,14 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
 
         {/* CTA Button - also works as direct link for noscript */}
         {/* Updated 2026-01-06: Uses handleButtonClick for separate button event tracking */}
+        {/* Updated 2026-01-09: Dynamic button size based on page.buttonSize */}
         <a
           href={page.whatsappUrl}
           onClick={(e) => {
             e.preventDefault();
             handleButtonClick();
           }}
-          className="inline-flex items-center gap-2 rounded-full bg-green-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:bg-green-600 hover:shadow-xl active:scale-95"
+          className={`inline-flex items-center gap-2 rounded-full bg-green-500 font-bold text-white shadow-lg transition-all hover:bg-green-600 hover:shadow-xl active:scale-95 ${BUTTON_SIZE_CLASSES[page.buttonSize ?? "medium"]}`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

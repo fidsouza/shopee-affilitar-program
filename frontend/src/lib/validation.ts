@@ -148,6 +148,8 @@ export const whatsAppPageSchema = z.object({
     .or(z.literal("")),
   socialProofs: z.array(z.string()).default([]),
   buttonText: z.string().min(1, "Informe o texto do botão").max(100, "Texto do botão muito longo (máx. 100 caracteres)"),
+  // Button Size - added 2026-01-09 for feature 017-whatsapp-button-size
+  buttonSize: emojiSizeSchema.default("medium"),
   whatsappUrl: z
     .string()
     .min(1, "Informe a URL do WhatsApp")

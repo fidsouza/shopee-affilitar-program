@@ -21,7 +21,8 @@ import { logInfo, logError } from "@/lib/logging";
 // Updated 2026-01-06: Vacancy counter (vacancyCounterEnabled + vacancyHeadline + vacancyCount + vacancyFooter + vacancyBackgroundColor + vacancyCountFontSize + vacancyHeadlineFontSize + vacancyFooterFontSize + vacancyDecrementInterval + vacancyHeadlineColor + vacancyCountColor + vacancyFooterColor)
 // Updated 2026-01-07: Social proof carousel (socialProofCarouselItems + carouselAutoPlay + carouselInterval) + Custom footer (footerText)
 // Updated 2026-01-08: Subheadline font size (subheadlineFontSize)
-export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'buttonEvent' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor' | 'footerText' | 'subheadlineFontSize'> & {
+// Updated 2026-01-09: Button size (buttonSize)
+export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pixelConfigId' | 'benefitCards' | 'emojiSize' | 'socialProofEnabled' | 'socialProofInterval' | 'buttonEvent' | 'vacancyFooter' | 'vacancyBackgroundColor' | 'vacancyHeadlineColor' | 'vacancyCountColor' | 'vacancyFooterColor' | 'footerText' | 'subheadlineFontSize' | 'buttonSize'> & {
   id: string;
   slug: string;
   headerImageUrl?: string;
@@ -54,6 +55,8 @@ export type WhatsAppPageRecord = Omit<WhatsAppPageInput, 'headerImageUrl' | 'pix
   footerText: string | null;
   // Subheadline Font Size - added 2026-01-08
   subheadlineFontSize: EmojiSize;
+  // Button Size - added 2026-01-09
+  buttonSize: EmojiSize;
   createdAt: string;
   updatedAt: string;
 };
@@ -90,6 +93,8 @@ type LegacyWhatsAppPageRecord = Omit<WhatsAppPageRecord, 'events' | 'redirectEve
   footerText?: string | null;
   // Subheadline Font Size - optional for backward compatibility (2026-01-08)
   subheadlineFontSize?: EmojiSize;
+  // Button Size - optional for backward compatibility (2026-01-09)
+  buttonSize?: EmojiSize;
 };
 
 // Migrate legacy record to new format (backward compatibility)
@@ -145,6 +150,9 @@ function migrateRecord(record: LegacyWhatsAppPageRecord): WhatsAppPageRecord {
 
   // Add default subheadlineFontSize if missing (backward compatibility - 2026-01-08)
   migrated.subheadlineFontSize = record.subheadlineFontSize ?? "medium";
+
+  // Add default buttonSize if missing (backward compatibility - 2026-01-09)
+  migrated.buttonSize = record.buttonSize ?? "medium";
 
   return migrated;
 }
@@ -283,6 +291,8 @@ export async function upsertWhatsAppPage(input: WhatsAppPageInput): Promise<What
     footerText: parsed.footerText ?? existing?.footerText ?? null,
     // Updated 2026-01-08: Subheadline font size
     subheadlineFontSize: parsed.subheadlineFontSize ?? existing?.subheadlineFontSize ?? "medium",
+    // Updated 2026-01-09: Button size
+    buttonSize: parsed.buttonSize ?? existing?.buttonSize ?? "medium",
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
