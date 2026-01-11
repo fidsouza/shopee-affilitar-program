@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 
 import { META_STANDARD_EVENTS, type MetaEvent } from "@/lib/meta-events";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation";
@@ -14,6 +14,9 @@ import { SocialProofCarousel } from "@/components/social-proof-carousel";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { toPng } from 'html-to-image';
+import type { Participant } from '../whatsapp-generator/types';
+import { generateTimestamp, generateFilename } from '../whatsapp-generator/types';
 
 // Appearance form state type
 type AppearanceFormState = {
@@ -157,6 +160,68 @@ export default function WhatsAppAdminPage() {
   const [appearanceLoading, setAppearanceLoading] = useState(true);
   const [appearanceSaving, setAppearanceSaving] = useState(false);
   const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(null);
+
+  // Generator state - feature 001-whatsapp-proof-generator
+  const [generatorGroupName, setGeneratorGroupName] = useState('');
+  const [generatorParticipants, setGeneratorParticipants] = useState<Participant[]>([]);
+  const [generatorSelectedId, setGeneratorSelectedId] = useState<string | null>(null);
+  const [generatorError, setGeneratorError] = useState<string | null>(null);
+  const [generatorSuccess, setGeneratorSuccess] = useState<string | null>(null);
+  const screenshotRef = useRef<HTMLDivElement>(null);
+
+  // Generator functions
+  const addGeneratorParticipant = useCallback(() => {
+    const newParticipant: Participant = {
+      id: crypto.randomUUID(),
+      label: `pessoa ${generatorParticipants.length + 1}`,
+      name: '',
+      message: '',
+      timestamp: generateTimestamp(generatorParticipants.length),
+      order: generatorParticipants.length
+    };
+    setGeneratorParticipants([...generatorParticipants, newParticipant]);
+    setGeneratorSelectedId(newParticipant.id);
+  }, [generatorParticipants]);
+
+  const updateGeneratorParticipant = useCallback((id: string, field: keyof Participant, value: string) => {
+    setGeneratorParticipants(generatorParticipants.map(p =>
+      p.id === id ? { ...p, [field]: value } : p
+    ));
+  }, [generatorParticipants]);
+
+  const downloadScreenshot = useCallback(async () => {
+    if (!screenshotRef.current) return;
+
+    if (!generatorGroupName.trim()) {
+      setGeneratorError('Nome do grupo é obrigatório');
+      return;
+    }
+    if (generatorParticipants.length === 0 || !generatorParticipants.some(p => p.message.trim())) {
+      setGeneratorError('Adicione pelo menos 1 participante com mensagem');
+      return;
+    }
+
+    setGeneratorError(null);
+    setGeneratorSuccess(null);
+
+    try {
+      const dataUrl = await toPng(screenshotRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: '#e5ddd5'
+      });
+
+      const link = document.createElement('a');
+      link.download = generateFilename(generatorGroupName);
+      link.href = dataUrl;
+      link.click();
+
+      setGeneratorSuccess('Screenshot baixado com sucesso!');
+      setTimeout(() => setGeneratorSuccess(null), 3000);
+    } catch (err) {
+      setGeneratorError(`Falha ao gerar screenshot: ${err}`);
+    }
+  }, [generatorGroupName, generatorParticipants]);
 
   const defaultPixel = useMemo(
     () => pixels.find((p) => p.isDefault) ?? pixels[0] ?? null,
@@ -442,6 +507,7 @@ export default function WhatsAppAdminPage() {
             <TabsTrigger value="geral">Geral</TabsTrigger>
             <TabsTrigger value="gatilhos">Gatilhos</TabsTrigger>
             <TabsTrigger value="pixel">Pixel</TabsTrigger>
+            <TabsTrigger value="gerador">Gerador de Provas</TabsTrigger>
           </TabsList>
           <TabsContent value="geral" className="space-y-4 mt-4">
             <div className="grid gap-2">
@@ -1548,6 +1614,155 @@ export default function WhatsAppAdminPage() {
                   Com redirect desabilitado, o usuário só será redirecionado ao clicar no botão.
                 </p>
               )}
+            </div>
+          </TabsContent>
+
+          {/* Feature 001-whatsapp-proof-generator */}
+          <TabsContent value="gerador" className="space-y-4 mt-4">
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Crie capturas de tela de grupos do WhatsApp para usar como prova social nas suas páginas.
+              </p>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left: Editor */}
+                <div className="space-y-4">
+                  {/* Group name input */}
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Nome do Grupo *</label>
+                    <input
+                      type="text"
+                      value={generatorGroupName}
+                      onChange={(e) => setGeneratorGroupName(e.target.value)}
+                      placeholder="Ex: Grupo VIP Shopee"
+                      maxLength={100}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {generatorGroupName.length}/100 caracteres
+                    </p>
+                  </div>
+
+                  {/* Participant management */}
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Participantes</label>
+                    {generatorParticipants.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Nenhum participante adicionado</p>
+                    ) : (
+                      <Tabs value={generatorSelectedId ?? ''} onValueChange={setGeneratorSelectedId}>
+                        <TabsList className="w-full flex-wrap h-auto">
+                          {generatorParticipants.map((p) => (
+                            <TabsTrigger key={p.id} value={p.id}>{p.label}</TabsTrigger>
+                          ))}
+                        </TabsList>
+                        {generatorParticipants.map((p) => (
+                          <TabsContent key={p.id} value={p.id} className="space-y-3">
+                            <input
+                              type="text"
+                              value={p.name}
+                              onChange={(e) => updateGeneratorParticipant(p.id, 'name', e.target.value)}
+                              placeholder="Nome (opcional)"
+                              maxLength={50}
+                              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              {p.name.length}/50 caracteres
+                            </p>
+                            <textarea
+                              value={p.message}
+                              onChange={(e) => updateGeneratorParticipant(p.id, 'message', e.target.value)}
+                              placeholder="Mensagem *"
+                              maxLength={500}
+                              rows={3}
+                              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring resize-none"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              {p.message.length}/500 caracteres
+                            </p>
+                          </TabsContent>
+                        ))}
+                      </Tabs>
+                    )}
+                    <Button
+                      type="button"
+                      onClick={addGeneratorParticipant}
+                      disabled={generatorParticipants.length >= 20}
+                      className="w-full sm:w-auto"
+                    >
+                      + Adicionar Pessoa
+                    </Button>
+                    {generatorParticipants.length >= 20 && (
+                      <p className="text-xs text-muted-foreground">
+                        Máximo de 20 participantes atingido
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Error and success messages */}
+                  {generatorError && <p className="text-sm text-destructive">{generatorError}</p>}
+                  {generatorSuccess && <p className="text-sm text-green-600">{generatorSuccess}</p>}
+
+                  {/* Download button */}
+                  <Button
+                    type="button"
+                    onClick={downloadScreenshot}
+                    size="lg"
+                    className="w-full"
+                  >
+                    Download Screenshot
+                  </Button>
+                </div>
+
+                {/* Right: Preview */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Preview</h3>
+                  <div
+                    ref={screenshotRef}
+                    className="max-w-md mx-auto bg-[#e5ddd5] rounded-lg overflow-hidden shadow-lg"
+                  >
+                    {/* WhatsApp Header */}
+                    <div className="bg-[#075e54] text-white px-4 py-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0"></div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+                          {generatorGroupName || 'Nome do Grupo'}
+                        </p>
+                        <p className="text-xs opacity-90">
+                          {generatorParticipants.length} {generatorParticipants.length === 1 ? 'participante' : 'participantes'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Message bubbles */}
+                    <div className="p-4 space-y-2 min-h-[300px]">
+                      {generatorParticipants.map((p) => (
+                        p.message.trim() && (
+                          <div key={p.id} className="flex flex-col">
+                            <div className="bg-white rounded-lg px-3 py-2 max-w-[80%] shadow-sm">
+                              {p.name && (
+                                <p className="text-xs font-semibold text-[#075e54] mb-1" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+                                  {p.name}
+                                </p>
+                              )}
+                              <p className="text-sm break-words" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+                                {p.message}
+                              </p>
+                              <p className="text-[10px] text-gray-500 text-right mt-1">
+                                {p.timestamp}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      ))}
+                      {generatorParticipants.length === 0 && (
+                        <p className="text-sm text-gray-500 text-center py-10">
+                          Adicione participantes para visualizar o preview
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
