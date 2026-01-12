@@ -7,6 +7,7 @@ import type { EmojiSize } from "@/lib/validation";
 import { SocialProofNotification } from "@/components/social-proof-notification";
 import { SocialProofCarousel } from "@/components/social-proof-carousel";
 import { PageFooter } from "@/components/page-footer";
+import { WhatsAppFooter } from "@/components/whatsapp-footer";
 
 // Emoji size CSS classes mapping
 const EMOJI_SIZE_CLASSES: Record<EmojiSize, string> = {
@@ -39,6 +40,13 @@ const SUBHEADLINE_SIZE_CLASSES: Record<EmojiSize, string> = {
   small: "text-xs sm:text-sm",
   medium: "text-sm sm:text-base",
   large: "text-base sm:text-lg",
+};
+
+// Button size classes - added 2026-01-09 for feature 017-whatsapp-button-size
+const BUTTON_SIZE_CLASSES: Record<EmojiSize, string> = {
+  small: "px-6 py-3 text-base",
+  medium: "px-8 py-4 text-lg",
+  large: "px-10 py-5 text-xl",
 };
 
 // Updated 2025-12-31: Multi-event support (events[] + redirectEvent)
@@ -234,10 +242,28 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
           </div>
         )}
 
+        {/* Group Image - added 2026-01-11 for feature 018-whatsapp-customization (US1) */}
+        {page.groupImageUrl && (
+          <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-green-500 shadow-lg">
+            <img
+              src={page.groupImageUrl}
+              alt="Imagem do grupo"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        )}
+
         {/* Headline */}
         <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
           {page.headline}
         </h1>
+
+        {/* Participant Count - added 2026-01-11 for feature 018-whatsapp-customization (US2) */}
+        {page.participantCount !== undefined && page.participantCount > 0 && (
+          <p className="text-sm text-gray-500 mt-1">
+            {page.participantCount.toLocaleString('pt-BR')} participantes
+          </p>
+        )}
 
         {/* Subheadline - Updated 2026-01-08: Always show when configured, with font size control */}
         {page.socialProofs.filter((s) => s.trim()).length > 0 && (
@@ -257,13 +283,14 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
 
         {/* CTA Button - also works as direct link for noscript */}
         {/* Updated 2026-01-06: Uses handleButtonClick for separate button event tracking */}
+        {/* Updated 2026-01-09: Dynamic button size based on page.buttonSize */}
         <a
           href={page.whatsappUrl}
           onClick={(e) => {
             e.preventDefault();
             handleButtonClick();
           }}
-          className="inline-flex items-center gap-2 rounded-full bg-green-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:bg-green-600 hover:shadow-xl active:scale-95"
+          className={`inline-flex items-center gap-2 rounded-full bg-green-500 font-bold text-white shadow-lg transition-all hover:bg-green-600 hover:shadow-xl active:scale-95 ${BUTTON_SIZE_CLASSES[page.buttonSize ?? "medium"]}`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -404,6 +431,14 @@ export function WhatsAppRedirectClient({ page, pixelId, eventId, redirectEventId
 
       {/* Custom Footer - Added 2026-01-07 */}
       <PageFooter text={page.footerText} />
+
+      {/* WhatsApp-style Interactive Footer - Added 2026-01-11 for feature 018-whatsapp-customization (US3) */}
+      {page.footerEnabled && (
+        <WhatsAppFooter
+          onSendClick={handleButtonClick}
+          placeholder="Digite uma mensagem"
+        />
+      )}
     </main>
   );
 }

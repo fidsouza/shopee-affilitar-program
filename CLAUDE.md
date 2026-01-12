@@ -95,7 +95,10 @@ Optional:
 - Vercel Edge Config (REST API) - sem alterações nesta feature (012-admin-appearance-general)
 - TypeScript 5, Node.js 20 + Next.js 16.0.7 (App Router), React 19, Tailwind CSS 3.4, shadcn/ui (Radix UI), Zod 4.1, lucide-reac (015-whatsapp-social-carousel-footer)
 - Vercel Edge Config (REST API) - padrão existente: index + registros individuais (015-whatsapp-social-carousel-footer)
+- TypeScript 5, Node.js 20 + Next.js 16.0.7 (App Router), React 19, Tailwind CSS 3.4, shadcn/ui (Radix UI), Zod 4.1, lucide-react (018-whatsapp-customization)
+- Vercel Edge Config (REST API) - padrão existente: index + registros individuais (018-whatsapp-customization)
 
 ## Recent Changes
+- 018-whatsapp-customization: Added group customization features (custom group image, participant count, WhatsApp-style footer)
 - 004-home-page-update: Home page simplificada para "Página em Construção", rota admin renomeada para /parametrizacao
 - 003-whatsapp-redirect-page: Added TypeScript 5, Node.js 20 + Next.js 16 (App Router), React 19, Tailwind CSS, shadcn/ui, Zod 4.1
