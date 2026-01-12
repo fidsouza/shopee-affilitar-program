@@ -92,6 +92,10 @@ type FormState = {
   subheadlineFontSize: EmojiSize;
   // Button Size - added 2026-01-09
   buttonSize: EmojiSize;
+  // Group Customization - added 2026-01-11 for feature 018-whatsapp-customization
+  groupImageUrl: string;
+  participantCount: number | "";
+  footerEnabled: boolean;
 };
 
 const initialForm: FormState = {
@@ -136,6 +140,10 @@ const initialForm: FormState = {
   subheadlineFontSize: "medium",
   // Button Size defaults - added 2026-01-09
   buttonSize: "medium",
+  // Group Customization defaults - added 2026-01-11
+  groupImageUrl: "",
+  participantCount: "",
+  footerEnabled: false,
 };
 
 export default function WhatsAppAdminPage() {
@@ -331,6 +339,10 @@ export default function WhatsAppAdminPage() {
         subheadlineFontSize: form.subheadlineFontSize,
         // Updated 2026-01-09: Button size
         buttonSize: form.buttonSize,
+        // Updated 2026-01-11: Group customization (feature 018)
+        groupImageUrl: form.groupImageUrl || undefined,
+        participantCount: form.participantCount === "" ? undefined : Number(form.participantCount),
+        footerEnabled: form.footerEnabled,
       };
 
       const res = await fetch("/api/whatsapp", {
@@ -411,6 +423,10 @@ export default function WhatsAppAdminPage() {
       subheadlineFontSize: page.subheadlineFontSize ?? "medium",
       // Updated 2026-01-09: Button size
       buttonSize: page.buttonSize ?? "medium",
+      // Updated 2026-01-11: Group customization (feature 018)
+      groupImageUrl: page.groupImageUrl ?? "",
+      participantCount: page.participantCount ?? "",
+      footerEnabled: page.footerEnabled ?? false,
     });
     setSocialProofsText(page.socialProofs.join("\n"));
     setEditingId(page.id);
@@ -1713,28 +1729,47 @@ export default function WhatsAppAdminPage() {
                   </Button>
                 </div>
 
-                {/* Right: Preview */}
+                {/* Right: Preview - INTEGRA TODAS AS FEATURES (Gerador + Personalizações US1, US2, US3) */}
                 <div>
-                  <h3 className="text-sm font-medium mb-3">Preview</h3>
+                  <h3 className="text-sm font-medium mb-3">Preview (com todas as personalizações)</h3>
                   <div
                     ref={screenshotRef}
-                    className="max-w-md mx-auto bg-[#e5ddd5] rounded-lg overflow-hidden shadow-lg"
+                    className="max-w-md mx-auto bg-[#e5ddd5] rounded-lg overflow-hidden shadow-lg relative"
                   >
                     {/* WhatsApp Header */}
                     <div className="bg-[#075e54] text-white px-4 py-3 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0"></div>
+                      {/* Group Image - US1 Preview */}
+                      {form.groupImageUrl ? (
+                        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-white">
+                          <img
+                            src={form.groupImageUrl}
+                            alt="Grupo"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentElement!.innerHTML = '<div class="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0"></div>';
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0"></div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
                           {generatorGroupName || 'Nome do Grupo'}
                         </p>
+                        {/* Participant Count - US2 Preview */}
                         <p className="text-xs opacity-90">
-                          {generatorParticipants.length} {generatorParticipants.length === 1 ? 'participante' : 'participantes'}
+                          {form.participantCount && form.participantCount > 0
+                            ? `${typeof form.participantCount === 'number' ? form.participantCount.toLocaleString('pt-BR') : form.participantCount} participantes`
+                            : `${generatorParticipants.length} ${generatorParticipants.length === 1 ? 'participante' : 'participantes'}`
+                          }
                         </p>
                       </div>
                     </div>
 
                     {/* Message bubbles */}
-                    <div className="p-4 space-y-2 min-h-[300px]">
+                    <div className="p-4 space-y-2 min-h-[300px]" style={{ paddingBottom: form.footerEnabled ? '60px' : '16px' }}>
                       {generatorParticipants.map((p) => (
                         p.message.trim() && (
                           <div key={p.id} className="flex flex-col">
@@ -1760,7 +1795,92 @@ export default function WhatsAppAdminPage() {
                         </p>
                       )}
                     </div>
+
+                    {/* WhatsApp Footer - US3 Preview */}
+                    {form.footerEnabled && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Digite uma mensagem"
+                            disabled
+                            className="flex-1 rounded-full border border-gray-300 bg-gray-50 px-4 py-2 text-sm"
+                            style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
+                          />
+                          <button
+                            type="button"
+                            disabled
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white"
+                          >
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                </div>
+              </div>
+
+              {/* Group Customization - added 2026-01-11 for feature 018-whatsapp-customization */}
+              <div className="mt-6 pt-6 border-t">
+                <div className="mb-4">
+                  <h3 className="text-base font-semibold">Personalização do Grupo</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Configure a imagem do grupo, contagem de participantes e footer interativo
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Group Image URL - US1 */}
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">URL da Imagem do Grupo (opcional)</label>
+                    <input
+                      value={form.groupImageUrl}
+                      onChange={(e) => setForm((prev) => ({ ...prev, groupImageUrl: e.target.value }))}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="https://exemplo.com/grupo.jpg"
+                      type="url"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Imagem circular exibida no topo (HTTPS obrigatório, formatos: .jpg, .png, .gif, .webp)
+                    </p>
+                  </div>
+
+                  {/* Participant Count - US2 */}
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Quantidade de Participantes (opcional)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="999999"
+                      value={form.participantCount}
+                      onChange={(e) => setForm((prev) => ({ ...prev, participantCount: e.target.value === "" ? "" : Number(e.target.value) }))}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Ex: 247"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Exibe contagem de participantes abaixo do headline (0 a 999.999)
+                    </p>
+                  </div>
+
+                  {/* Footer Enabled - US3 */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="footerEnabled"
+                      type="checkbox"
+                      checked={form.footerEnabled}
+                      onChange={(e) => setForm((prev) => ({ ...prev, footerEnabled: e.target.checked }))}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <label htmlFor="footerEnabled" className="text-sm font-medium cursor-pointer">
+                      Exibir footer estilo WhatsApp
+                    </label>
+                  </div>
+                  <p className="text-xs text-muted-foreground ml-6">
+                    Footer fixo na parte inferior com campo de texto e botão de envio (redireciona para WhatsApp)
+                  </p>
                 </div>
               </div>
             </div>

@@ -236,6 +236,27 @@ export const whatsAppPageSchema = z.object({
     .transform(v => v || null),
   // Subheadline Font Size - added 2026-01-08 for feature 016-subheadline-font-size
   subheadlineFontSize: emojiSizeSchema.default("medium"),
+  // Group Image URL - added 2026-01-11 for feature 018-whatsapp-customization
+  groupImageUrl: z
+    .string()
+    .url("URL inválida")
+    .regex(
+      /^https:\/\/.+\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i,
+      "URL deve ser HTTPS e apontar para uma imagem válida (.jpg, .png, .gif, .webp)"
+    )
+    .max(2048, "URL deve ter no máximo 2048 caracteres")
+    .optional()
+    .or(z.literal(""))
+    .transform(v => v || undefined),
+  // Participant Count - added 2026-01-11 for feature 018-whatsapp-customization
+  participantCount: z
+    .number()
+    .int("Quantidade deve ser um número inteiro")
+    .min(0, "Quantidade deve ser maior ou igual a 0")
+    .max(999999, "Quantidade deve ser menor que 1.000.000")
+    .optional(),
+  // Footer Enabled - added 2026-01-11 for feature 018-whatsapp-customization
+  footerEnabled: z.boolean().default(false),
 });
 
 export type WhatsAppPageInput = z.infer<typeof whatsAppPageSchema>;
