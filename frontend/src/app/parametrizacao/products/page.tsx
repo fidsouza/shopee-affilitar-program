@@ -17,6 +17,7 @@ type FormState = {
   pixelConfigId: string;
   events: MetaEvent[];
   status: "active" | "inactive";
+  transitionEnabled: boolean;
 };
 
 const initialForm: FormState = {
@@ -25,6 +26,7 @@ const initialForm: FormState = {
   pixelConfigId: "",
   events: [],
   status: "active",
+  transitionEnabled: true,
 };
 
 export default function ProductAdminPage() {
@@ -255,6 +257,25 @@ export default function ProductAdminPage() {
           </div>
         </div>
 
+        <div className="grid gap-2">
+          <label className="text-sm font-medium">Redirecionamento</label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={form.transitionEnabled}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, transitionEnabled: e.target.checked }))
+              }
+            />
+            Mostrar página de transição (~2,5s) antes de redirecionar
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Desmarque para redirecionar instantaneamente. Os eventos do pixel continuam sendo
+            disparados via Conversion API (server-side).
+          </p>
+        </div>
+
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" disabled={submitting}>
@@ -308,6 +329,11 @@ export default function ProductAdminPage() {
                   >
                     {product.status === "active" ? "Ativo" : "Inativo"}
                   </span>
+                  {product.transitionEnabled === false && (
+                    <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800">
+                      Redirect direto
+                    </span>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     <Button variant="secondary" size="sm" onClick={() => copyLink(product.slug)}>
                       Copiar link
