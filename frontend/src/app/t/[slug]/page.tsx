@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { ClientTracker } from "./client";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getProductBySlug } from "@/lib/repos/products";
 import { readValue } from "@/lib/edge-config";
 import type { PixelRecord } from "@/lib/repos/pixels";
@@ -61,6 +61,18 @@ export default async function TransitionPage({ params }: PageProps) {
   const host = hdrs.get("host") ?? process.env.NEXT_PUBLIC_BASE_URL ?? "";
   const sourceUrl = `${proto}://${host}/t/${product.slug}`;
 
+  // Dados de correspondência exigidos pela Conversion API (user_data).
+  // IP e user agent vêm dos headers; fbp/fbc dos cookies setados pelo pixel.
+  const cks = await cookies();
+  const clientIp =
+    hdrs.get("x-forwarded-for")?.split(",")[0].trim() || hdrs.get("x-real-ip") || undefined;
+  const userData = {
+    client_ip_address: clientIp,
+    client_user_agent: hdrs.get("user-agent") ?? undefined,
+    fbp: cks.get("_fbp")?.value,
+    fbc: cks.get("_fbc")?.value,
+  };
+
   // Fire Conversion API server-side (best effort)
   await Promise.all(
     events.map((event) =>
@@ -69,6 +81,7 @@ export default async function TransitionPage({ params }: PageProps) {
         eventName: event,
         eventId,
         eventSourceUrl: sourceUrl || "",
+        userData,
       }).catch((err) => logError("CAPI send failed in page", { error: String(err), event })),
     ),
   );
