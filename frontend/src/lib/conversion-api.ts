@@ -5,11 +5,19 @@ import { uuidv4 } from "@/lib/uuid";
 const FB_TOKEN = process.env.FB_PIXEL_API_TOKEN;
 const FB_API_VERSION = "v18.0";
 
+type UserData = {
+  client_ip_address?: string;
+  client_user_agent?: string;
+  fbp?: string;
+  fbc?: string;
+};
+
 type SendEventInput = {
   pixelId: string;
   eventName: MetaEvent;
   eventId: string;
   eventSourceUrl: string;
+  userData?: UserData;
 };
 
 export async function sendConversionEvent({
@@ -17,11 +25,17 @@ export async function sendConversionEvent({
   eventName,
   eventId,
   eventSourceUrl,
+  userData,
 }: SendEventInput) {
   if (!FB_TOKEN) {
     logInfo("FB_PIXEL_API_TOKEN missing, skipping CAPI send", { eventName, pixelId });
     return { skipped: true };
   }
+  // A Conversion API exige ao menos um parâmetro de correspondência em user_data.
+  // Removemos chaves vazias para não enviar campos undefined.
+  const user_data = Object.fromEntries(
+    Object.entries(userData ?? {}).filter(([, v]) => Boolean(v)),
+  );
   const url = `https://graph.facebook.com/${FB_API_VERSION}/${pixelId}/events`;
   const payload = {
     data: [
@@ -31,6 +45,7 @@ export async function sendConversionEvent({
         action_source: "website",
         event_source_url: eventSourceUrl,
         event_id: eventId,
+        user_data,
       },
     ],
     access_token: FB_TOKEN,
