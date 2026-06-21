@@ -84,6 +84,7 @@ export async function upsertProduct(input: ProductLinkInput): Promise<ProductRec
     pixelConfigId: parsed.pixelConfigId,
     events: parsed.events,
     status: parsed.status,
+    transitionEnabled: parsed.transitionEnabled,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };

@@ -48,6 +48,7 @@ export const productLinkSchema = z
     pixelConfigId: z.string().min(1, "Selecione um pixel"),
     events: z.array(metaEventEnum).min(1, "Selecione pelo menos um evento").transform(dedupeEvents),
     status: z.enum(["active", "inactive"]),
+    transitionEnabled: z.boolean().default(true),
   })
   .refine(
     (data) => data.status === "inactive" || data.events.length > 0,

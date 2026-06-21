@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { ClientTracker } from "./client";
 import { headers } from "next/headers";
@@ -74,6 +74,13 @@ export default async function TransitionPage({ params }: PageProps) {
   );
 
   logInfo("Transition page render", { slug: product.slug, events, pixelId: pixel.pixelId });
+
+  // Modo "só redirecionar": eventos já dispararam via CAPI acima; pula a página de transição
+  // (e o fbq client-side) e redireciona imediatamente. Registros antigos sem o campo
+  // (transitionEnabled === undefined) mantêm a página de transição.
+  if (product.transitionEnabled === false) {
+    redirect(product.affiliateUrl);
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background text-foreground">
